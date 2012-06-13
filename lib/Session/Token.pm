@@ -105,19 +105,18 @@ Session::Token - Secure, efficient, simple random session token generation
 
 =head1 SYNOPSIS
 
-=head2 Good session token
+=head2 Simple session token
 
-    use Session::Token;
+    my $token = Session::Token->new->get;
+    ## 74da9DABOqgoipxqQDdygw
+
+=head2 Keep generator around
 
     my $token_generator = Session::Token->new;
-
     my $token = $token_generator->get;
-
-    print "$token\n"; ## -> bu4EXqWt5nEeDjTAZcbTKY
+    ## bu4EXqWt5nEeDjTAZcbTKY
 
 =head2 Custom alphabet
-
-    use Session::Token;
 
     print Session::Token->new(alphabet => 'ACTG', length => 100000)->get;
     ## AGTACTTAGCAATCAGCTGGTTCATGGTTGCCCCCATAG...
@@ -132,7 +131,9 @@ When a Session::Token object is created, 1024 bytes will be read from C</dev/ura
 
 Once a context is created, you call the C<get> method on that context and it will return you a new token as a string. After the context is created, no system calls are used to generate tokens. This is one way that C<Session::Token> helps with efficiency, although this is only important for certain use cases (generally not web sessions).
 
-After a context is created, generating a new token will not fail due to a full descriptor table like a routine that opens C</dev/urandom> on every request might. Programs that do this are also difficult to run inside C<chroot>s.
+After a context is created, generating a new token will not fail due to a full descriptor table like a routine that opens C</dev/urandom> on every request might. In a server, this is the most important reason you should use the "keep generator around" mode instead of creating Session::Token objects every time you need a token. Programs that don't do this are also difficult to run inside C<chroot>s and are less efficient.
+
+If your application C<fork>s, make sure that the generators are created after the fork (or are re-created), as forking will also duplicate the generator state.
 
 Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed have been known to return session tokens based only on the contents of uninitialised memory! Unix really ought to provide a system call for random data instead of just C</dev/urandom>.
 
@@ -140,9 +141,9 @@ Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will
 
 =head1 CUSTOM ALPHABETS
 
-Being able to choose exactly which characters appear in your token is very useful. This set of characters is called the alphabet. B<The default alphabet is 62 characters: uppercase letters, lowercase letters, and digits.> For some purposes, this is somewhat of a sweet spot. It is much more compact than hexadecimal encoding which helps with efficiency because session tokens are usually transfered over the network many times during a session. Also, base-62 doesn't use "wacky" characters like base-64 encodings do. These characters sometimes cause encoding/escaping problems (ie when embedded in URLs) and are annoying because often you can't just double-click to select tokens.
+Being able to choose exactly which characters appear in your token is very useful. This set of characters is called the alphabet. B<The default alphabet is 62 characters: uppercase letters, lowercase letters, and digits.> For some purposes, this is somewhat of a sweet spot. It is much more compact than hexadecimal encoding which helps with efficiency because session tokens are usually transfered over the network many times during a session. Also, base-62 doesn't use "wacky" characters like base-64 encodings do. These characters sometimes cause encoding/escaping problems (ie when embedded in URLs) and are annoying because often you can't select tokens with double-clicks.
 
-But there are all kinds of reasons you might like to use another alphabet. One example is if your users are reading tokens off a print-out, you may choose to omit characters like C<o>, C<O>, and C<0> that can easily be confused in this context.
+Although the default is base-62, there are all kinds of reasons you might like to use another alphabet. One example is if your users are reading tokens from a print-out or SMS or whatever, you may choose to omit characters like C<o>, C<O>, and C<0> that can easily be confused.
 
 To set a custom alphabet, just pass in either a string or an array of characters to the C<alphabet> parameter of the constructor:
 
@@ -154,12 +155,12 @@ To set a custom alphabet, just pass in either a string or an array of characters
 
 =head1 ENTROPY
 
-How long are the generated tokens? There are two ways to specify this. The first is to pass in the length in characters you want your tokens to be with the C<length> parameter:
+There are two ways to specify the length of tokens. The first is directly:
 
     print Session::Token->new(length => 5)->get;
     ## -> wpLH4
 
-The second way is to specify their minimum entropy in terms of bits with the C<entropy> parameter:
+The second way is to specify their minimum entropy in terms of bits:
 
     print Session::Token->new(entropy => 24)->get;
     ## -> Fo5SX
@@ -174,7 +175,7 @@ So these tokens have about 29.8 bits of entropy. Note that if we removed one cha
     $ perl -E 'say 4 * log(62)/log(2)'
     23.8167852415475
 
-B<The default minimum entropy is 128 bits.> Combined with the default base-62 alphabet, tokens are 22 characters long and therefore have about 131 bits of entropy:
+B<The default minimum entropy is 128 bits.> Default tokens (that also use base-62) are 22 characters long and therefore have about 131 bits of entropy:
 
     $ perl -E 'say 22 * log(62)/log(2)'
     130.992318828511
@@ -183,15 +184,15 @@ B<The default minimum entropy is 128 bits.> Combined with the default base-62 al
 
 =head1 MOD BIAS
 
-Many token generation libraries, especially ones that implement custom alphabets, make the mistake of generating a random value, computing its modulus over the size of the alphabet, and then using this modulus to index into the alphabet to retrieve an output character.
+Many token generation libraries, especially ones that implement custom alphabets, make the mistake of generating a random value, computing its modulus over the size of the alphabet, and then using this modulus to index into an alphabet to retrieve an output character.
 
-Why is this bad? Consider the alphabet C<"abc">. What we would like is this output probability distribution:
+Why is this bad? Consider the alphabet C<"abc">. This is the ideal output probability distribution which is required for tokens to maintain their specified minimum entropy:
 
     P(a) = 1/3
     P(b) = 1/3
     P(c) = 1/3
 
-Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]>. If we use the naive modulus algorithm described above, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, C<3> I<also maps> to C<a>. So instead of the even distribution above, we have the following biased distribution:
+Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]>. If we use the naïve modulus algorithm described above, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, C<3> I<also maps> to C<a>. So instead of the even distribution above, we have the following biased distribution:
 
     P(a) = 2/4 = 1/2
     P(b) = 1/4
@@ -199,17 +200,22 @@ Assume we have a uniform random number source that generates values in the set C
 
 L<Session::Token> eliminates this bias in the above case by only using C<0>, C<1>, and C<2>, and throwing out all C<3>s.
 
-This is slightly inefficient. Specifically, in the worst case scenario of an alphabet with 129 characters, on average for each output byte we consume C<1.9845> bytes from our random number generator. But that's OK because ISAAC is extremely fast.
+This is slightly inefficient. Specifically, in the worst case scenario of an alphabet with 129 characters, on average for each output byte we consume C<1.9845> bytes from our random number generator.
+
+If this interests you, you should also check out the C<t/no-mod-bias.t> test included with Session::Token.
+
+The inefficiency described above is actually OK because ISAAC is extremely fast. Depending on compiler/CPU/etc ISAAC uses as little as 18.5 machine instructions (according to Jenkins' site) to generate each ISAAC word, and every ISAAC word gives us 4 whole bytes.
+
 
 
 
 =head1 INTRODUCING BIAS
 
-If your alphabet contains the same character two or more times, this character will be more biased than characters that only occur once. You should be very careful your alphabets don't overlap if you are creating random session tokens.
+If your alphabet contains the same character two or more times, this character will be more biased than any characters that only occur once. You should be very careful that your alphabets don't overlap if you are trying to create random session tokens.
 
 However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should issue a warning?)
 
-    Session::Token->new(alphabet => '0000001')->get;
+    Session::Token->new(alphabet => '0000001')->get; # don't do this
     ## -> 0000000000010000000110000000000000000000000100
 
 Note that due to a limitation discussed below, alphabets larger than 256 aren't currently supported so your bias can't get very granular.
