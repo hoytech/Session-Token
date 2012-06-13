@@ -17,7 +17,7 @@ struct session_token_ctx {
   struct randctx isaac_ctx;
 };
 
-int get_new_byte(struct session_token_ctx *ctx) {
+static int get_new_byte(struct session_token_ctx *ctx) {
   int output;
 
   if (ctx->bytes_left_in_curr_word == 0) {
@@ -38,7 +38,7 @@ int get_new_byte(struct session_token_ctx *ctx) {
   return output;
 }
 
-int get_mask(int v) {
+static int get_mask(int v) {
   v--;
   v |= v >> 1;
   v |= v >> 2;
