@@ -1,0 +1,12 @@
+README
+Makefile
+Makefile.old
+MYMETA.*
+Session-Token-*.tar.gz
+blib/
+pm_to_blib
+Token.bs
+Token.c
+Token.o
+randport.o
+MANIFEST.bak
