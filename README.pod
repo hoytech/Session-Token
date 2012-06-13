@@ -93,7 +93,7 @@ Why is this bad? Consider the alphabet C<"abc">. What we would like is this outp
     P(b) = 1/3
     P(c) = 1/3
 
-Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]>. If we use the naive modulus algorithm describe above, C<1> maps to C<b>, C<2> maps to C<c>, and both C<0> B<and> C<3> map to C<a>. So instead of the even distribution above, we have the following biased distribution:
+Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]>. If we use the naive modulus algorithm described above, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, C<3> I<also maps> to C<a>. So instead of the even distribution above, we have the following biased distribution:
 
     P(a) = 2/4 = 1/2
     P(b) = 1/4
@@ -144,7 +144,7 @@ Windows isn't currently supported. Meh.
 
 There are lots of different modules for generating random data.
 
-There are cryptographic number generators like L<Crypt::URandom>, L<Math::Random::Secure::RNG>, &c, but they usually don't implement alphabets and some of them open L</dev/urandom> for every chunk of random bytes.
+There are cryptographic number generators like L<Crypt::URandom>, L<Math::Random::Secure::RNG>, &c, but they usually don't implement alphabets and some of them open C</dev/urandom> for every chunk of random bytes.
 
 L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified (?) alphabet. Also it gets its source of unpredictability from UUIDs and then hashes them with SHA1. I think this is bad design because some UUID standards aren't designed to be unpredictable at all. Ideally knowing a target's MAC address, the rough time the token was issued, &c would not help you predict a reduced area of token-space to concentrate brute force guessing attacks on. I don't know if Data::Token uses these types of UUIDs or the (potentially secure) pure-random types, but because that this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a pure-random UUID type, there would be no reason to hash), I don't feel good about using this module.
 
