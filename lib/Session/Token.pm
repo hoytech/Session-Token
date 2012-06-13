@@ -118,7 +118,7 @@ Session::Token - Secure, efficient, simple random session token generation
 
 =head2 Custom alphabet
 
-    print Session::Token->new(alphabet => 'ACTG', length => 100000)->get;
+    my $token = Session::Token->new(alphabet => 'ACTG', length => 100000)->get;
     ## AGTACTTAGCAATCAGCTGGTTCATGGTTGCCCCCATAG...
 
 
@@ -175,7 +175,7 @@ So these tokens have about 29.8 bits of entropy. Note that if we removed one cha
     $ perl -E 'say 4 * log(62)/log(2)'
     23.8167852415475
 
-B<The default minimum entropy is 128 bits.> Default tokens (that also use base-62) are 22 characters long and therefore have about 131 bits of entropy:
+B<The default minimum entropy is 128 bits.> Default tokens (that use the default base-62 alphabet) are 22 characters long and therefore have about 131 bits of entropy:
 
     $ perl -E 'say 22 * log(62)/log(2)'
     130.992318828511
@@ -200,11 +200,11 @@ Assume we have a uniform random number source that generates values in the set C
 
 L<Session::Token> eliminates this bias in the above case by only using C<0>, C<1>, and C<2>, and throwing out all C<3>s.
 
-This is slightly inefficient. Specifically, in the worst case scenario of an alphabet with 129 characters, on average for each output byte we consume C<1.9845> bytes from our random number generator.
-
 If this interests you, you should also check out the C<t/no-mod-bias.t> test included with Session::Token.
 
-The inefficiency described above is actually OK because ISAAC is extremely fast. Depending on compiler/CPU/etc ISAAC uses as little as 18.5 machine instructions (according to Jenkins' site) to generate each ISAAC word, and every ISAAC word gives us 4 whole bytes.
+Of course throwing out a portion of our random data is slightly inefficient. Specifically, in the worst case scenario of an alphabet with 129 characters, on average for each output byte we consume C<1.9845> bytes from our random number generator.
+
+The inefficiency described above is actually OK because ISAAC is extremely fast. Depending on compiler/CPU/etc ISAAC uses as little as 18.5 machine instructions (according to Jenkins' site) to generate each ISAAC word, and every ISAAC word gives us four whole bytes.
 
 
 
@@ -231,9 +231,25 @@ Due to a limitation in this module's code, alphabets can't be larger than 256 ch
     $z =~ tr/01/ λ/;
     ## -> λλ  λλλλ λ
 
-However, to be really useful with higher numbered code points, a "sparse" alphabet data-structure would have to be created. And if you go this route there is no point in hard-coding a limitation on the size of Unicode or some arbitrary machine word size. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of kinda doing that in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
+However, to be really useful with higher numbered code points, a "sparse" alphabet data-structure would have to be created. And if you go this route there is no point in hard-coding a limitation on the size of Unicode or some arbitrary machine word. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of kinda doing that in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
 
 This module is not designed to be the ultimate random number generator and at this time I think changing the design as described above would interfere with its goal of being secure, efficient, and simple.
+
+
+
+
+=head1 SEEDING
+
+This module is designed to always seed itself from C</dev/urandom> or C</dev/arandom>. You never need to seed it yourself.
+
+However if you know what you're doing, you can use an internal API and pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
+
+    my $gen = Session::Token(seed => "\x00" x 1024);
+
+This is done in several places in the test-suite, but obviously don't do this in regular applications because the tokens will always be the same.
+
+There is currently no way to extract the seed from a Session::Token object.
+
 
 
 
@@ -280,3 +296,5 @@ __END__
 TODO
 
 * Write a full descriptor table test
+
+* Make the urandom/arandom checking code more readable/maintainable
