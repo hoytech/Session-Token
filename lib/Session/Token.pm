@@ -267,6 +267,8 @@ Windows isn't currently supported. Meh.
 
 =head1 SEE ALSO
 
+L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
+
 There are lots of different modules for generating random data.
 
 There are cryptographic number generators like L<Crypt::URandom>, L<Math::Random::Secure::RNG>, &c, but they usually don't implement alphabets and some of them open C</dev/urandom> for every chunk of random bytes.
