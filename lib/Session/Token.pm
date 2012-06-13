@@ -152,7 +152,7 @@ To set a custom alphabet, just pass in either a string or an array of characters
 
     Session::Token->new(alphabet => '01')->get;
     Session::Token->new(alphabet => ['0', '1'])->get; # same thing
-    Session::Token->new(alphabet => ['a'..'z'])->get; # a range
+    Session::Token->new(alphabet => ['a'..'z'])->get; # character range
 
 
 
@@ -243,13 +243,15 @@ This module is not designed to be the ultimate random number generator and at th
 
 =head1 SEEDING
 
-This module is designed to always seed itself from C</dev/urandom> or C</dev/arandom>. You never need to seed it yourself.
+This module is designed to always seed itself from C</dev/urandom> or C</dev/arandom>. You almost never need to seed it yourself.
 
-However if you know what you're doing, you can use an internal API and pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
+However if you know what you're doing, you can pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
 
     my $gen = Session::Token(seed => "\x00" x 1024);
 
 This is done in several places in the test-suite, but obviously don't do this in regular applications because the tokens will always be the same.
+
+One valid reason for seeding is if you have reason to believe that there isn't enough entropy in the kernel's randomness pool and therefore you don't trust C</dev/urandom>. In this case you should acquire your own seed data from somewhere trustworthy (maybe C</dev/random>).
 
 There is currently no way to extract the seed from a Session::Token object.
 
@@ -294,10 +296,13 @@ This program is free software; you can redistribute it and/or modify it under th
 
 
 
+
 __END__
 
 TODO
 
-* Write a full descriptor table test
+* Write a full file descriptor table test
 
 * Make the urandom/arandom checking code more readable/maintainable
+
+* Seed extractor API
