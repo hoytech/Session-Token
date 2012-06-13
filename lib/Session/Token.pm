@@ -96,6 +96,8 @@ sub DESTROY {
 __END__
 
 
+=encoding utf-8
+
 =head1 NAME
 
 Session::Token - Secure, efficient, simple random session token generation
@@ -126,7 +128,7 @@ Session::Token - Secure, efficient, simple random session token generation
 
 This module provides a secure, efficient, and simple interface for creating session tokens, password reset codes, temporary passwords, random identifiers, and anything else you can think of.
 
-When a Session::Token object is created, 1024 bytes will be read from C</dev/urandom> (Linux, Solaris, most BSDs) or C</dev/arandom> (some BSDs). These bytes will be used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator. ISAAC is a cryptographically secure PRNG that improves on the well known L<RC4|http://en.wikipedia.org/wiki/RC4> algorithm in some important areas. Notably, it doesn't have short cycles like RC4. The theoretical shortest possible cycle in ISAAC is C<2^40>, although no cycles this short have ever been found (and may not exist at all). On average, ISAAC cycles are a ridiculous C<2^8295>.
+When a Session::Token object is created, 1024 bytes will be read from C</dev/urandom> (Linux, Solaris, most BSDs) or C</dev/arandom> (some BSDs). These bytes will be used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator. ISAAC is a cryptographically secure PRNG that improves on the well known L<RC4|http://en.wikipedia.org/wiki/RC4> algorithm in some important areas. Notably, it doesn't have short cycles like RC4. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and may not exist at all). On average, ISAAC cycles are a ridiculous C<2**8295>.
 
 Once a context is created, you call the C<get> method on that context and it will return you a new token as a string. After the context is created, no system calls are used to generate tokens. This is one way that C<Session::Token> helps with efficiency, although this is only important for certain use cases (generally not web sessions).
 
