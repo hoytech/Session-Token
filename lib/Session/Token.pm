@@ -54,6 +54,9 @@ sub new {
 
   ## Init token length
 
+  croak "you can't specify both length and entropy"
+    if defined $args{length} && defined $args{entropy};
+
   if (defined $args{length}) {
     croak "bad value for length" unless $args{length} =~ m/^\d+$/ && $args{length} > 0;
     $self->{length} = $args{length};
