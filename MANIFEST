@@ -1,11 +1,14 @@
+Changes
 COPYING
 lib/Session/Token.pm
+Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 MYMETA.json
 MYMETA.yml
 rand.h
 randport.c
+README
 standard.h
 t/alphabets.t
 t/no-mod-bias.t

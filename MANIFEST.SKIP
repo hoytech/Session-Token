@@ -1,6 +1,12 @@
 MANIFEST.bak
 Makefile.old
-Makefile
+Makefile$
 README.pod
 .gitignore
 .git/
+blib/
+pm_to_blib
+Token.o
+Token.c
+Token.bs
+randport.o

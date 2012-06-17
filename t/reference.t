@@ -12,7 +12,7 @@ use Test::More tests => 2;
 my $little_endian = pack("L", 1) eq pack("V", 1);
 
 my $tokenctx = Session::Token->new(
-                 alphabet => [ map { chr($_) } (0 .. 255) ],
+                 alphabet => [ map { chr } (0 .. 255) ],
                  length => 4,
                  seed => "\x00" x 1024, ## null seed
                );
