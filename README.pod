@@ -181,7 +181,7 @@ It might be a good idea if this library could detect forks and re-seed in the ch
 
 There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated keystream bug.
 
-Windows isn't currently supported. Meh.
+Windows isn't currently supported. Meh. Patches welcome though. Should be simple to use L<Crypt::Random::Source::Strong::Win32>.
 
 
 
