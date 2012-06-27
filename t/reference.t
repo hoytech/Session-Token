@@ -36,7 +36,7 @@ my $reference_output;
   $reference_output = <DATA>;
 }
 
-ok($output eq $reference_output, "refrence output matches");
+is($output, $reference_output, "refrence output matches");
 
 
 
