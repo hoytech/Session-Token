@@ -1,2 +1,8 @@
+0.8   2012-06-26
+  * Open /dev/urandom as :raw to prevent CRLF translation &c
+  * Improve docs
+  * Record some system information in test output
+  * Add seed coverage test
+
 0.7   2012-06-17
   * Initial release
