@@ -35,8 +35,8 @@ sub new {
   if (!defined $seed) {
     my ($fh, $err1, $err2);
 
-    open($fh, '<', '/dev/urandom') || ($err1 = $!);
-    open($fh, '<', '/dev/arandom') || ($err2 = $!)
+    open($fh, '<:raw', '/dev/urandom') || ($err1 = $!);
+    open($fh, '<:raw', '/dev/arandom') || ($err2 = $!)
       unless defined $fh;
 
     if (!defined $fh) {
