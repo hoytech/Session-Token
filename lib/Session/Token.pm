@@ -15,6 +15,13 @@ XSLoader::load('Session::Token', $VERSION);
 my $default_alphabet = join('', ('0'..'9', 'a'..'z', 'A'..'Z',));
 my $default_entropy = 128;
 
+my $is_windows;
+
+if ($^O =~ /mswin/i) {
+  require Crypt::Random::Source::Strong::Win32;
+  $is_windows = 1;
+}
+
 
 sub new {
   my ($class, %args) = @_;
@@ -33,17 +40,23 @@ sub new {
   }
 
   if (!defined $seed) {
-    my ($fh, $err1, $err2);
+    if ($is_windows) {
+      my $windows_rng_source = Crypt::Random::Source::Strong::Win32->new;
+      $seed = $windows_rng_source->get(1024);
+      die "Win32 RNG source didn't provide 1024 bytes" unless length($seed) == 1024;
+    } else {
+      my ($fh, $err1, $err2);
 
-    open($fh, '<:raw', '/dev/urandom') || ($err1 = $!);
-    open($fh, '<:raw', '/dev/arandom') || ($err2 = $!)
-      unless defined $fh;
+      open($fh, '<:raw', '/dev/urandom') || ($err1 = $!);
+      open($fh, '<:raw', '/dev/arandom') || ($err2 = $!)
+        unless defined $fh;
 
-    if (!defined $fh) {
-      croak "unable to open /dev/urandom ($err1) or /dev/arandom ($err2)";
+      if (!defined $fh) {
+        croak "unable to open /dev/urandom ($err1) or /dev/arandom ($err2)";
+      }
+
+      sysread($fh, $seed, 1024) == 1024 || croak "unable to read from random device: $!";
     }
-
-    sysread($fh, $seed, 1024) == 1024 || croak "unable to read from random device: $!";
   }
 
 
@@ -142,7 +155,7 @@ Session::Token - Secure, efficient, simple random session token generation
 
 This module provides a secure, efficient, and simple interface for creating session tokens, password reset codes, temporary passwords, random identifiers, and anything else you can think of.
 
-When a Session::Token object is created, 1024 bytes will be read from C</dev/urandom> (Linux, Solaris, most BSDs) or C</dev/arandom> (some older BSDs). These bytes will be used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator.
+When a Session::Token object is created, 1024 bytes will be read from C</dev/urandom> (Linux, Solaris, most BSDs), C</dev/arandom> (some older BSDs), or with L<Crypt::Random::Source::Strong::Win32> (Windows). These bytes will be used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator.
 
 Once a generator is created, you can repeatedly call the C<get> method on the generator object and it will return new tokens.
 
@@ -285,8 +298,6 @@ One valid reason for seeding is if you have some reason to believe that there is
 It might be a good idea if this library could detect forks and re-seed in the child process.
 
 There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated keystream bug.
-
-Windows isn't currently supported. Meh. Patches welcome though. Should be simple to use L<Crypt::Random::Source::Strong::Win32>.
 
 
 
