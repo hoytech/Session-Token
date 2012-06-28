@@ -9,6 +9,9 @@ use strict;
 use Test::More tests => 2;
 
 
+my $little_endian = pack("I!", 1) =~ /^\x01/;
+
+
 my $tokenctx = Session::Token->new(
                  alphabet => [ map { chr } (0 .. 255) ],
                  length => 4,
@@ -21,7 +24,8 @@ my $output = '';
 for (0..1) {
   for my $j (0 .. 255) {
     my $v = $tokenctx->get;
-    $output .= unpack('H*', reverse $v);
+    $v = reverse $v if $little_endian;
+    $output .= unpack('H*', $v);
     $output .= "\n" if ($j & 7) == 7;
   }
 }

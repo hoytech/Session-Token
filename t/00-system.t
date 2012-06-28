@@ -8,7 +8,7 @@ use strict;
 use Test::More tests => 2;
 
 
-my $little_endian = pack("L", 1) eq pack("V", 1);
+my $little_endian = pack("I!", 1) =~ /^\x01/;
 my $int_size = length(pack("I!", 0));
 my $long_size = length(pack("L!", 0));
 my $pointer_size = length(pack("P", 0));
