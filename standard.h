@@ -11,7 +11,7 @@ Modified a bit for Success::Token
 #ifndef STANDARD
 # define STANDARD
 
-// Support both ILP32 and LP64
+// Support ILP32, LP64, and LLP64
 typedef unsigned int ub4;
 typedef int word;
 

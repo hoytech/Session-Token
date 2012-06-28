@@ -19,5 +19,6 @@ diag("System: $^O - $system_info");
 ok($^O !~ /mswin/i, 'MS windows not currently supported');
 
 ok(($int_size == 4 && $long_size == 4 && $pointer_size == 4) ||
-   ($int_size == 4 && $long_size == 8 && $pointer_size == 8),
-   'only ILP32 and LP64 are supported');
+   ($int_size == 4 && $long_size == 8 && $pointer_size == 8) ||
+   ($int_size == 4 && $long_size == 4 && $pointer_size == 8),
+   'only ILP32, LP64, and LLP64 are supported');
