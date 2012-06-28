@@ -1,3 +1,7 @@
+0.9.0  2012-06-28
+  * Experimental win32 support
+  * Fix reference test on big endian archs
+
 0.8   2012-06-26
   * Open /dev/urandom as :raw to prevent CRLF translation &c
   * Improve docs
