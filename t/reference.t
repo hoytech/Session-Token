@@ -2,27 +2,12 @@ use Session::Token;
 
 ## The point of this test is to ensure that we are correctly using the
 ## ISAAC algorithm by comparing our output to Jenkins' null seeded
-## test vector published on his website. It also verifies and prints
-## some system information.
+## test vector published on his website.
 
 use strict;
 
-use Test::More tests => 4;
+use Test::More tests => 2;
 
-
-my $little_endian = pack("L", 1) eq pack("V", 1);
-my $int_size = length(pack("I!", 0));
-my $long_size = length(pack("L!", 0));
-my $pointer_size = length(pack("P", 0));
-
-my $system_info = ($little_endian ? 'little' : 'big') . " endian, ILP: $int_size, $long_size, $pointer_size";
-diag("System: $^O - $system_info");
-
-ok($^O !~ /mswin/i, 'MS windows not currently supported');
-
-ok(($int_size == 4 && $long_size == 4 && $pointer_size == 4) ||
-   ($int_size == 4 && $long_size == 8 && $pointer_size == 8),
-   'only ILP32 and LP64 are supported');
 
 my $tokenctx = Session::Token->new(
                  alphabet => [ map { chr } (0 .. 255) ],
@@ -36,8 +21,7 @@ my $output = '';
 for (0..1) {
   for my $j (0 .. 255) {
     my $v = $tokenctx->get;
-    $v = reverse $v if $little_endian;
-    $output .= unpack('H*', $v);
+    $output .= unpack('H*', reverse $v);
     $output .= "\n" if ($j & 7) == 7;
   }
 }
