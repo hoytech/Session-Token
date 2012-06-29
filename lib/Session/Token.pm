@@ -228,7 +228,7 @@ In summary, the default token length of exactly 22 characters is a consequence o
 
 Many token generation libraries, especially ones that implement custom alphabets, make the mistake of generating a random value, computing its modulus over the size of an alphabet, and then using this modulus to index into the alphabet to determine an output character.
 
-Why is this bad? Consider the alphabet C<"abc">. An ideal output probability distribution for each character in the token is:
+Why is this bad? Consider the alphabet C<"abc">. The ideal output probability distribution for each character in the token is:
 
     P(a) = 1/3
     P(b) = 1/3
@@ -244,7 +244,7 @@ Session::Token eliminates this bias in the above case by only using C<0>, C<1>, 
 
 Of course throwing away a portion of random data is slightly inefficient. In the worst case scenario of an alphabet with 129 characters, for each output byte this module consumes on average C<1.9845> bytes from the random number generator. This inefficiency isn't a problem because ISAAC is extremely fast.
 
-Note that if your application issues biased tokens, then some tokens are more likely than other tokens, providing a starting point for token guessing. If the tokens are unbiased, then there is no starting point since all tokens are equally likely.
+Note that if your application issues biased tokens then some tokens are more likely than other tokens which provides a starting point for token guessing. If the tokens are unbiased then all tokens are equally likely and there is no starting point.
 
 
 
@@ -254,12 +254,12 @@ If your alphabet contains the same character two or more times, this character w
 
 However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should issue a warning?)
 
-    Session::Token->new(alphabet => '0000001', length => 100000)->get; # don't do this
+    Session::Token->new(alphabet => '0000001', length => 5000)->get; # don't do this
     ## -> 0000000000010000000110000000000000000000000100...
 
 Due to a limitation discussed below, alphabets larger than 256 aren't currently supported so your bias can't get very granular.
 
-Aside: If you have a biased output stream like the above example then you can re-construct an un-biased bit sequence with the von neumann algorithm. This works by comparing pairs of bits. If the bits are identical, they are discarded. Otherwise the order of the different bits is used to determine the output bit, ie C<00> and C<11> are discarded but C<01> and C<10> are mapped to output bits of C<0> and C<1> respectively. This only works if the bias in each bit is constant (like in the above example).
+Aside: If you have a constant-biased output stream like the above example produces then you can re-construct an un-biased bit sequence with the von neumann algorithm. This works by comparing pairs of bits. If the pair consists of identical bits, it is discarded. Otherwise the order of the different bits is used to determine an output bit, ie C<00> and C<11> are discarded but C<01> and C<10> are mapped to output bits of C<0> and C<1> respectively. This only works if the bias in each bit is constant (like all characters in a Session::Token are).
 
 
 
