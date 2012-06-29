@@ -116,7 +116,7 @@ Why is this bad? Consider the alphabet C<"abc">. The ideal output probability di
     P(b) = 1/3
     P(c) = 1/3
 
-Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]> (most PRNGs provide sequences of bits, in other words power-of-2 set sizes). If we use the naïve modulus algorithm described above, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, and C<3> I<also> maps to C<a>. Instead of the even distribution above, we have the following biased distribution:
+Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]> (most PRNGs provide sequences of bits, in other words power-of-2 size sets). If we use the naïve modulus algorithm described above, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, and C<3> I<also> maps to C<a>. Instead of the even distribution above, we have the following biased distribution:
 
     P(a) = 2/4 = 1/2
     P(b) = 1/4

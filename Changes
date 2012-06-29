@@ -1,3 +1,6 @@
+0.10   2012-06-28
+  * Oops, bad previous version number
+
 0.9.0  2012-06-28
   * Experimental win32 support
   * Fix reference test on big endian archs
