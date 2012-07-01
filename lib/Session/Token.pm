@@ -159,11 +159,11 @@ When a Session::Token object is created, 1024 bytes will be read from C</dev/ura
 
 Once a generator is created, you can repeatedly call the C<get> method on the generator object and it will return new tokens.
 
-B<IMPORTANT>: If your application calls C<fork>, make sure that any generators are re-created in one of the processes after the fork since forking will duplicate the generator state and otherwise both parent and child processes will go on to produce identical tokens.
+B<IMPORTANT>: If your application calls C<fork>, make sure that any generators are re-created in one of the processes after the fork since forking will duplicate the generator state and otherwise both parent and child processes will go on to produce identical tokens (as with perl's L<rand> after seeding).
+
+After the generator context is created, no system calls are used to generate tokens. This is one way that Session::Token helps with efficiency. However, this is only important for certain use cases (generally not web sessions).
 
 ISAAC is a cryptographically secure PRNG that improves on the well known RC4 algorithm in some important areas. For instance, it doesn't have short cycles like RC4 does. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and probably don't exist at all). On average, ISAAC cycles are a ridiculous C<2**8295>.
-
-After the generator context is created, no system calls are used to generate tokens. This is one way that Session::Token helps with efficiency. This is only important for certain use cases (generally not web sessions).
 
 In a server application the most important reason you should use the "keep generator around" mode instead of creating Session::Token objects every time you need a token is that in this mode generating a new token cannot fail due to a full descriptor table. Creating new generators for every token can fail for this reason. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot> environments.
 
@@ -216,7 +216,7 @@ B<The default minimum entropy is 128 bits.> Default tokens are 22 characters lon
     $ perl -E 'say 22 * log(62)/log(2)'
     130.992318828511
 
-An interesting observation is that 128-bit base-64 tokens also require 22 characters and these tokens contain only 1 more bit of entropy.
+An interesting observation is that 128-bit minimum tokens in base-64 representation also require 22 characters and these tokens contain only 1 more bit of entropy.
 
 Another Session::Token design criterion is that all tokens should be the same length. The default token length is 22 characters and the tokens are always exactly 22 characters (no more, no less). This is nice because it makes writing matching regular expressions easier, simplifies storage (you never have to store length), and causes various log files and things to line up neatly on your screen. Instead of tokens that are exactly C<N> characters, some libraries that use arbitrary precision arithmetic end up creating tokens of I<at most> C<N> characters.
 
@@ -240,17 +240,19 @@ Assume we have a uniform random number source that generates values in the set C
     P(b) = 1/4
     P(c) = 1/4
 
-Session::Token eliminates this bias in the above case by only using C<0>, C<1>, and C<2>, and throwing away all C<3>s (also see the C<t/no-mod-bias.t> test).
+Bias like this is bad because some tokens are more likely than other tokens which provides a starting point when token guessing. Tokens that are unbiased are equally likely and therefore there is no starting point.
+
+Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the next section for a mis-use warning). It does this in the same way that you might simulate producing an unbiased random number between 1-5 given an unbiased 6-sided die: Keep rolling until you roll under a 6.
+
+In the above example, Session::Token eliminates bias by only using values of C<0>, C<1>, and C<2> (the C<t/no-mod-bias.t> test contains some more notes on this topic).
 
 Of course throwing away a portion of random data is slightly inefficient. In the worst case scenario of an alphabet with 129 characters, for each output byte this module consumes on average C<1.9845> bytes from the random number generator. This inefficiency isn't a problem because ISAAC is extremely fast.
-
-Note that if your application issues biased tokens then some tokens are more likely than other tokens which provides a starting point for token guessing. If the tokens are unbiased then all tokens are equally likely and there is no starting point.
 
 
 
 =head1 INTRODUCING BIAS
 
-If your alphabet contains the same character two or more times, this character will be more biased than any characters that only occur once. You should be very careful that your alphabets don't overlap if you are trying to create random session tokens.
+If your alphabet contains the same character two or more times, this character will be more biased than a character that only occurs once. You should be careful that your alphabets don't overlap if you are trying to create random session tokens.
 
 However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should issue a warning?)
 
@@ -281,13 +283,13 @@ This module is not designed to be the ultimate random number generator and at th
 
 =head1 SEEDING
 
-This module is designed to always seed itself from C</dev/urandom> or C</dev/arandom>. You should never need to seed it yourself.
+This module is designed to always seed itself from your kernel's secure random number source. You should never need to seed it yourself.
 
 However if you know what you're doing, you can pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
 
     my $gen = Session::Token(seed => "\x00" x 1024);
 
-This is done in the test-suite, but obviously don't do this in regular applications because the generated tokens will always be the same.
+This is done in the test-suite to compare against Jenkins' reference ISAAC output, but obviously don't do this in regular applications because the generated tokens will always be the same.
 
 One valid reason for seeding is if you have some reason to believe that there isn't enough entropy in your kernel's randomness pool and therefore you don't trust C</dev/urandom>. In this case you should acquire your own seed data from somewhere trustworthy (maybe C</dev/random> or a previously stored trusted seed).
 
@@ -350,3 +352,5 @@ TODO
 * Make the urandom/arandom checking code more readable/maintainable
 
 * Seed extractor API
+
+* Issue warning when an alphabet contains a duplicated character
