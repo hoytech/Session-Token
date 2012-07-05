@@ -108,7 +108,7 @@ In summary, the default token length of exactly 22 characters is a consequence o
 
 =head1 MOD BIAS
 
-Many token generation libraries, especially ones that implement custom alphabets, make the mistake of generating a random value, computing its modulus over the size of an alphabet, and then using this modulus to index into the alphabet to determine an output character.
+Some token generation libraries that implement custom alphabets generate a random value, compute its modulus over the size of an alphabet, and then use this modulus to index into the alphabet to determine an output character.
 
 Why is this bad? Consider the alphabet C<"abc">. The ideal output probability distribution for each character in the token is:
 
@@ -124,7 +124,7 @@ Assume we have a uniform random number source that generates values in the set C
 
 Bias like this is bad because some tokens are more likely than other tokens which provides a starting point when token guessing. Tokens that are unbiased are equally likely and therefore there is no starting point.
 
-Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the next section for a mis-use warning). It does this in the same way that you might simulate producing an unbiased random number between 1-5 given an unbiased 6-sided die: Keep rolling until you roll under a 6.
+Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the next section for a mis-use warning). It does this in the same way that you might simulate producing unbiased random numbers from 1 to 5 given an unbiased 6-sided die: Re-roll every time a 6 comes up.
 
 In the above example, Session::Token eliminates bias by only using values of C<0>, C<1>, and C<2> (the C<t/no-mod-bias.t> test contains some more notes on this topic).
 
@@ -191,15 +191,15 @@ L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
 There are lots of different modules for generating random data.
 
-Like this module, perl's C<rand()> function implements a PRNG in user-space seeded from C</dev/urandom>. However, perl C<rand()> is seeded with a mere 4 bytes from C</dev/urandom> and the perldoc doesn't seem to specify a PRNG algorithm, so I prefer not to use C<rand()> for session tokens.
+Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl C<rand()> is seeded with a mere 4 bytes from C</dev/urandom> and the perldoc doesn't seem to specify a PRNG algorithm.
 
 L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified (?) alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
 
-There are several decent random number generators like L<Math::Random::Secure>, L<Crypt::URandom> &c, but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers though.
+There are several decent random number generators like L<Math::Random::Secure>, L<Crypt::URandom> &c, but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement alphabets.
 
 L<String::Random> is a cool module with a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, inspecting the code indicates that it uses perl's C<rand()>. Also, the lack of performance, bias, and security discussion in the docs made me decide to not use this otherwise very interesting module.
 
-L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> on every token. The docs say "this module was intended to be used as a pseudorandom string generator for less secure applications where response timing may be an issue." What the... ?
+L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> on every token.
 
 L<Data::Random> is also a pretty nice looking library but it seems to use C<rand()> and the docs don't discuss security.
 
