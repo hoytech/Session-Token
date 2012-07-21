@@ -1,3 +1,9 @@
+0.82   2012-07-20
+  * Make no-mod-bias test more useful as a stand-alone tool
+  * New test to specifically verify the kernel seeding
+    procedure is working (win32 is primary concern)
+  * Improve docs
+
 0.81   2012-06-28
   * OK now I have CPAN versions figured out :)
 
