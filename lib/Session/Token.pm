@@ -140,7 +140,7 @@ Session::Token - Secure, efficient, simple random session token generation
     my $token2 = $generator->get;
     ## 4Vez56Zc7el5Ggx4PoXCNL
 
-=head2 Custom entropy in bits
+=head2 Custom minimum entropy in bits
 
     my $token = Session::Token->new(entropy => 256)->get;
     ## WdLiluxxZVkPUHsoqnfcQ1YpARuj9Z7or3COA4HNNAv
@@ -216,7 +216,7 @@ B<The default minimum entropy is 128 bits.> Default tokens are 22 characters lon
     $ perl -E 'say 22 * log(62)/log(2)'
     130.992318828511
 
-An interesting observation is that 128-bit minimum tokens in base-64 representation also require 22 characters and these tokens contain only 1 more bit of entropy.
+An interesting observation is that in base-64 representation, 128-bit minimum tokens also require 22 characters and that these tokens contain only 1 more bit of entropy.
 
 Another Session::Token design criterion is that all tokens should be the same length. The default token length is 22 characters and the tokens are always exactly 22 characters (no more, no less). This is nice because it makes writing matching regular expressions easier, simplifies storage (you never have to store length), and causes various log files and things to line up neatly on your screen. Instead of tokens that are exactly C<N> characters, some libraries that use arbitrary precision arithmetic end up creating tokens of I<at most> C<N> characters.
 
@@ -246,7 +246,9 @@ Session::Token provides unbiased tokens regardless of the size of your alphabet 
 
 In the above example, Session::Token eliminates bias by only using values of C<0>, C<1>, and C<2> (the C<t/no-mod-bias.t> test contains some more notes on this topic).
 
-Of course throwing away a portion of random data is slightly inefficient. In the worst case scenario of an alphabet with 129 characters, for each output byte this module consumes on average C<1.9845> bytes from the random number generator. This inefficiency isn't a problem because ISAAC is extremely fast.
+Of course throwing away a portion of random data is slightly inefficient. In the worst case scenario of an alphabet with 129 characters, for each output byte this module consumes on average C<1.9845> bytes from the random number generator. This inefficiency isn't a problem because ISAAC is quite fast.
+
+Note that mod bias can be made arbitrarily small by increasing the amount of data consumed from the random number generator for each character (providing that arbitrary precision modulus is available). Because this module fundamentally avoids mod bias, it can use each of the 4 bytes from an ISAAC-32 word for a separate character (excepting "re-rolls").
 
 
 
@@ -274,9 +276,13 @@ Due to a limitation in this module's code, alphabets can't be larger than 256 ch
     $z =~ tr/01/-λ/;
     ## -> λλ--λλλλ-λ
 
-However, if you wanted to natively support high code points, there is no point in hard-coding a limitation on the size of Unicode or some arbitrary machine word. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of kinda doing that in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
+Here's an interesting way to generate a uniform random integer between 0 to 999 inclusive:
 
-This module is not designed to be the ultimate random number generator and at this time I think changing the design as described above would interfere with its goal of being secure, efficient, and simple.
+    0 + Session::Token->new(alphabet => ['0'..'9'], length => 3)->get
+
+If you wanted to natively support high code points, there is no point in hard-coding a limitation on the size of Unicode or some arbitrary machine word. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of something similar in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
+
+This module is not however designed to be the ultimate random number generator and at this time I think changing the design as described above would interfere with its goal of being secure, efficient, and simple.
 
 
 
