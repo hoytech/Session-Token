@@ -57,7 +57,7 @@ Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will
 
 Being able to choose exactly which characters appear in your token is sometimes useful. This set of characters is called the I<alphabet>. B<The default alphabet size is 62 characters: uppercase latin letters, lowercase latin letters, and digits> (C<a-zA-Z0-9>).
 
-For some purposes, base-62 is a sweet spot. It is much more compact than hexadecimal encoding which helps with efficiency because session tokens are usually transfered over the network many times during a session (often uncompressed in HTTP headers).
+For some purposes, base-62 is a sweet spot. It is more compact than hexadecimal encoding which helps with efficiency because session tokens are usually transfered over the network many times during a session (often uncompressed in HTTP headers).
 
 Also, base-62 tokens don't use "wacky" characters like base-64 encodings do. These characters sometimes cause encoding/escaping problems (ie when embedded in URLs) and are annoying because often you can't select tokens by double-clicking on them.
 
@@ -73,12 +73,12 @@ To set a custom alphabet, just pass in either a string or an array of characters
 
 =head1 ENTROPY
 
-There are two ways to specify the length of tokens. The first is directly in terms of characters:
+There are two ways to specify the length of tokens. The most primitive is in terms of characters:
 
     print Session::Token->new(length => 5)->get;
     ## -> wpLH4
 
-The second way is to specify their minimum entropy in terms of bits:
+But the primary way is to specify their minimum entropy in terms of bits:
 
     print Session::Token->new(entropy => 24)->get;
     ## -> Fo5SX
@@ -183,9 +183,21 @@ One valid reason for seeding is if you have some reason to believe that there is
 
 
 
+
+=head1 VARIABLE LENGTH TOKENS
+
+If you randomly truncate tokens created by Session::Token, be careful not to introduce bias. For example, if you choose the length of the token as a uniformly distributed random length between 8 and 10, then the output will be biased towards shorter token sizes. Length 8 tokens should appear less frequently than length 10 tokens because there are fewer of them.
+
+Implementing unbiased random token trunction would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't anywhere in the Session::Token source code (but C<128> is).
+
+
+
+
 =head1 BUGS
 
-It might be a good idea if this library could detect forks and re-seed in the child process.
+Should check for biased alphabets and print warnings.
+
+Would be cool if it could detect forks and re-seed in the child process.
 
 There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated keystream bug.
 
@@ -201,13 +213,13 @@ Like this module, perl's C<rand()> function implements a user-space PRNG seeded 
 
 L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified (?) alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
 
-There are several decent random number generators like L<Math::Random::Secure>, L<Crypt::URandom> &c, but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement alphabets.
+There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets.
 
-L<String::Random> is a cool module with a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, inspecting the code indicates that it uses perl's C<rand()>. Also, the lack of performance, bias, and security discussion in the docs made me decide to not use this otherwise very interesting module.
+L<String::Random> is a cool module with a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and the lack of performance, bias, and security discussion in the docs made me decide to not use this otherwise very interesting module.
 
-L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> on every token.
+L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-L<Data::Random> is also a pretty nice looking library but it seems to use C<rand()> and the docs don't discuss security.
+There are several other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword> but most of them use C<rand()> and/or don't adequately deal with bias.
 
 
 
