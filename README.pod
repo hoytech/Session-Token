@@ -186,9 +186,13 @@ One valid reason for seeding is if you have some reason to believe that there is
 
 =head1 VARIABLE LENGTH TOKENS
 
+As mentioned above, all tokens produced by a Session::Token generator are the same length. If you prefer tokens of variable length, it is possible to post-process the tokens in order to achieve this so long as you keep some things in mind.
+
 If you randomly truncate tokens created by Session::Token, be careful not to introduce bias. For example, if you choose the length of the token as a uniformly distributed random length between 8 and 10, then the output will be biased towards shorter token sizes. Length 8 tokens should appear less frequently than length 10 tokens because there are fewer of them.
 
-Implementing unbiased random token trunction would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't anywhere in the Session::Token source code (but C<128> is).
+Another approach is to eliminate leading characters of a given value in the same way as leading C<0>s are typically eliminated from numeric representations. This approach doesn't introduce bias. However, because the tokens C<1> and C<01> are not distinct, it also does not increase token entropy which is the main reason for preferring variable length tokens.
+
+Implementing unbiased, variable-length tokens would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't anywhere in the Session::Token source code (but C<128> is).
 
 
 
@@ -209,17 +213,19 @@ L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
 There are lots of different modules for generating random data.
 
-Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl C<rand()> is seeded with a mere 4 bytes from C</dev/urandom> and the perldoc doesn't seem to specify a PRNG algorithm.
+Neil Bowers has created a L<3rd party review|http://neilb.org/reviews/passwords.html> of various modules for generating tokens/passwords.
 
-L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified (?) alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
+Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl's C<rand()> is not usually secure. Perl doesn't specify a PRNG algorithm at all. On linux it is seeded with a mere 4 bytes from C</dev/urandom>.
 
-There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets.
+L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA-1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
+
+There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
 
 L<String::Random> is a cool module with a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and the lack of performance, bias, and security discussion in the docs made me decide to not use this otherwise very interesting module.
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-There are several other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword> but most of them use C<rand()> and/or don't adequately deal with bias.
+There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister by default, don't adequately deal with bias, and/or don't let you specify fully generic alphabets.
 
 
 
