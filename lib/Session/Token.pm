@@ -155,19 +155,19 @@ Session::Token - Secure, efficient, simple random session token generation
 
 This module provides a secure, efficient, and simple interface for creating session tokens, password reset codes, temporary passwords, random identifiers, and anything else you can think of.
 
-When a Session::Token object is created, 1024 bytes will be read from C</dev/urandom> (Linux, Solaris, most BSDs), C</dev/arandom> (some older BSDs), or with L<Crypt::Random::Source::Strong::Win32> (Windows). These bytes will be used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator.
+When a Session::Token object is created, 1024 bytes are read from C</dev/urandom> (Linux, Solaris, most BSDs), C</dev/arandom> (some older BSDs), or L<Crypt::Random::Source::Strong::Win32> (Windows). These bytes are used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator.
 
 Once a generator is created, you can repeatedly call the C<get> method on the generator object and it will return new tokens.
 
-B<IMPORTANT>: If your application calls C<fork>, make sure that any generators are re-created in one of the processes after the fork since forking will duplicate the generator state and otherwise both parent and child processes will go on to produce identical tokens (as with perl's L<rand> after seeding).
+B<IMPORTANT>: If your application calls C<fork>, make sure that any generators are re-created in one of the processes after the fork since forking will duplicate the generator state and both parent and child processes will go on to produce identical tokens (just like perl's L<rand> after it is seeded).
 
 After the generator context is created, no system calls are used to generate tokens. This is one way that Session::Token helps with efficiency. However, this is only important for certain use cases (generally not web sessions).
 
 ISAAC is a cryptographically secure PRNG that improves on the well known RC4 algorithm in some important areas. For instance, it doesn't have short cycles like RC4 does. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and probably don't exist at all). On average, ISAAC cycles are a ridiculous C<2**8295>.
 
-In a server application the most important reason you should use the "keep generator around" mode instead of creating Session::Token objects every time you need a token is that in this mode generating a new token cannot fail due to a full descriptor table. Creating new generators for every token can fail for this reason. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot> environments.
+In a server application the most important reason you should use the "keep generator around" mode instead of creating Session::Token objects every time you need a token is that in this mode generating a new token cannot fail due to a full file descriptor table. Creating new generators for every token can fail for this reason. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot> environments.
 
-Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory! Unix really ought to provide a system call for random data.
+Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory. Unix really ought to provide a system call for random data.
 
 
 
@@ -201,7 +201,7 @@ But the primary way is to specify their minimum entropy in terms of bits:
     print Session::Token->new(entropy => 24)->get;
     ## -> Fo5SX
 
-In the above example, the resulting token is guaranteed to have at least 24 bits of entropy. Given the default base-62 alphabet, we can compute the exact entropy of a 5 character token as follows:
+In the above example, the resulting token contains at least 24 bits of entropy. Given the default base-62 alphabet, we can compute the exact entropy of a 5 character token as follows:
 
     $ perl -E 'say 5 * log(62)/log(2)'
     29.7709815519344
@@ -331,8 +331,6 @@ L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
 There are lots of different modules for generating random data.
 
-Neil Bowers has created a L<3rd party review|http://neilb.org/reviews/passwords.html> of various modules for generating tokens/passwords.
-
 Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl's C<rand()> is not usually secure. Perl doesn't specify a PRNG algorithm at all. On linux it is seeded with a mere 4 bytes from C</dev/urandom>.
 
 L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA-1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
@@ -343,8 +341,9 @@ L<String::Random> is a cool module with a neat regexp-like language for specifyi
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister by default, don't adequately deal with bias, and/or don't let you specify fully generic alphabets.
+There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister by default, don't adequately deal with bias, and/or don't let you specify generic alphabets.
 
+Neil Bowers has conducted a L<3rd party review|http://neilb.org/reviews/passwords.html> of various token/password generation modules including Session::Token.
 
 
 
