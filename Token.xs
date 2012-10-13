@@ -93,7 +93,7 @@ void
 _get_token(ctx_raw, alphabet, output)
         unsigned long ctx_raw
         SV *alphabet
-        SV *output;
+        SV *output
     CODE:
         struct session_token_ctx *ctx;
         char *alphabetp;
