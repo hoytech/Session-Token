@@ -120,7 +120,7 @@ Why is this bad? Consider the alphabet C<"abc">. The ideal output probability di
 
 Given this ideal distribution, each token has a C<1/27> chance of being generated.
 
-Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]> (most PRNGs provide sequences of bits, in other words power-of-2 size sets). If we use the naïve modulus algorithm described above then, C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, and C<3> I<also> maps to C<a>. Instead of the even distribution above, we have the following biased distribution:
+Assume we have a uniform random number source that generates values in the set C<[0,1,2,3]> (most PRNGs provide sequences of bits, in other words power-of-2 size sets). If we use the naïve modulus algorithm described above then C<0> maps to C<a>, C<1> maps to C<b>, C<2> maps to C<c>, and C<3> I<also> maps to C<a>. Instead of the even distribution above, we have the following biased distribution:
 
     P(a) = 2/4 = 1/2
     P(b) = 1/4
@@ -130,13 +130,43 @@ Now the token C<aaa> has a C<1/8> chance, C<aab> has a C<1/16> chance, C<bbb> ha
 
 Bias like this is bad because certain tokens are obvious starting points when token guessing. Tokens that are unbiased are equally likely and therefore there is no starting point.
 
-Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the next section for a mis-use warning). It does this in the same way that you might simulate producing unbiased random numbers from 1 to 5 given an unbiased 6-sided die: Re-roll every time a 6 comes up.
+Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the L<INTRODUCING BIAS> section for a mis-use warning). It does this in the same way that you might simulate producing unbiased random numbers from 1 to 5 given an unbiased 6-sided die: Re-roll every time a 6 comes up.
 
 In the above example, Session::Token eliminates bias by only using values of C<0>, C<1>, and C<2> (the C<t/no-mod-bias.t> test contains some more notes on this topic).
 
-Of course throwing away a portion of random data is slightly inefficient. In the worst case scenario of an alphabet with 129 characters, for each output byte this module consumes on average C<1.9845> bytes from the random number generator. This inefficiency isn't a problem because ISAAC is quite fast.
-
 Note that mod bias can be made arbitrarily small by increasing the amount of data consumed from a random number generator (provided that arbitrary precision modulus is available). Because this module fundamentally avoids mod bias, it can use each of the 4 bytes from an ISAAC-32 word for a separate character (excepting "re-rolls").
+
+
+
+=head1 EFFICIENCY OF RE-ROLLING
+
+Throwing away a portion of random data in order to avoid mod bias is slightly inefficient. How many bytes from ISAAC do we expect to consume for every character in the token? It depends on the size of the alphabet.
+
+Session::Token masks off each byte using the smallest power of two greater than or equal to the alphabet size minus one so the probability that any particular byte can be used is:
+
+    P = alphabet_size / next_power_of_two(alphabet_size)
+
+For example, with the default base-62 alphabet C<P> is C<62/64>.
+
+In order to find the average number of bytes consumed for each character, calculate the expected value C<E>. There is a probability C<P> that the first byte will be used and therefore only one byte will be consumed, and a probability C<1 - P> that C<1 + E> bytes will be consumed:
+
+    E = P*1 + (1 - P)*(1 + E)
+
+    E = P + 1 + E - P - P*E
+
+    0 = 1 - P*E
+
+    P*E = 1
+
+    E = 1/P
+
+So for the default base-62 alphabet, the average number of bytes consumed for each character in a token is:
+
+    E = 1/(62/64) = 64/62 ~ 1.0323
+
+Because of the next power of two masking optimisation described above, C<E> will always be less than C<2>. In the worst case scenario of an alphabet with 129 characters, C<E> is roughly C<1.9845>.
+
+This minor inefficiency isn't an issue because the ISAAC implementation used is quite fast and this module is very thrifty in how it uses ISAAC's output.
 
 
 
@@ -179,7 +209,7 @@ This module is not however designed to be the ultimate random number generator a
 
 This module is designed to always seed itself from your kernel's secure random number source. You should never need to seed it yourself.
 
-However if you know what you're doing, you can pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
+However if you know what you're doing you can pass in a custom seed as a 1024 byte long string. For example, here is how to create a "null seeded" generator:
 
     my $gen = Session::Token(seed => "\x00" x 1024);
 
@@ -194,11 +224,11 @@ One valid reason for seeding is if you have some reason to believe that there is
 
 As mentioned above, all tokens produced by a Session::Token generator are the same length. If you prefer tokens of variable length, it is possible to post-process the tokens in order to achieve this so long as you keep some things in mind.
 
-If you randomly truncate tokens created by Session::Token, be careful not to introduce bias. For example, if you choose the length of the token as a uniformly distributed random length between 8 and 10, then the output will be biased towards shorter token sizes. Length 8 tokens should appear less frequently than length 10 tokens because there are fewer of them.
+If you randomly truncate tokens created by Session::Token, be careful not to introduce bias. For example, if you choose the length of the token as a uniformly distributed random length between 8 and 10, then the output will be biased towards shorter token sizes. Length 8 tokens should appear less frequently than length 9 or 10 tokens because there are fewer of them.
 
-Another approach is to eliminate leading characters of a given value in the same way as leading C<0>s are eliminated from numeric representations. Although this approach doesn't introduce bias, since the tokens C<1> and C<01> are not distinct it does not increase token entropy given a fixed maximum token length which is the main reason for preferring variable length tokens. The ideal variable length algorithm would generate both C<1> and C<01> tokens (with identical frequency of course).
+Another approach is to eliminate leading characters of a given value in the same way as leading C<0>s are eliminated from numeric representations. Although this approach doesn't introduce bias, the tokens C<1> and C<01> are not distinct so it does not increase token entropy given a fixed maximum token length which is the main reason for preferring variable length tokens. The ideal variable length algorithm would generate both C<1> and C<01> tokens (with identical frequency of course).
 
-Implementing unbiased, variable-length tokens would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable-length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't hardcoded anywhere in the Session::Token source code (but C<128> is).
+Implementing unbiased, variable-length tokens would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable-length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't hard-coded anywhere in the Session::Token source code (but C<128> is).
 
 
 
@@ -211,13 +241,15 @@ Would be cool if it could detect forks and warn or re-seed in the child process.
 
 There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated keystream bug.
 
+Doesn't work on perl 5.6 and below due to the use of C<:raw> (thanks CPAN testers). It could probably use C<binmode> instead, but meh.
+
 
 
 =head1 SEE ALSO
 
 L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
-There are lots of different modules for generating random data.
+There are lots of different modules for generating random data. If the characterisations of any of them below are inaccurate or out-of-date, please file a github issue and I will correct them.
 
 Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl's C<rand()> is not secure. Perl doesn't specify a PRNG algorithm at all. On linux, whatever it is is seeded with a mere 4 bytes from C</dev/urandom>.
 
@@ -229,7 +261,9 @@ L<String::Random> is a cool module with a neat regexp-like language for specifyi
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister (not secure) by default, don't adequately deal with bias, and/or don't let you specify generic alphabets.
+There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
+
+L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. However, it has a massive dependency tree, doesn't give any control over when its singleton generator is (re-)seeded, and is much slower than this module (even when using L<Math::Random::ISAAC::XS>). It does however support alphabets larger than C<256> and might work in environments without XS.
 
 Neil Bowers has conducted a L<3rd party review|http://neilb.org/reviews/passwords.html> of various token/password generation modules including Session::Token.
 
