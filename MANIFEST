@@ -10,6 +10,7 @@ README
 standard.h
 t/00-system.t
 t/alphabets.t
+t/kernel-seeding.t
 t/no-mod-bias.t
 t/reference.t
 t/seed-coverage.t
