@@ -1,3 +1,4 @@
+use 5.008;
 use strict;
 
 use ExtUtils::MakeMaker;
@@ -19,6 +20,7 @@ my %args = (
     dist => {
       PREOP => 'perldoc -uT $(VERSION_FROM) > README.pod; pod2text README.pod > $(DISTVNAME)/README',
     },
+    MIN_PERL_VERSION  => '5.8.0',
 );
 
 
