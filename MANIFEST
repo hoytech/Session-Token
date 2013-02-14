@@ -4,8 +4,6 @@ lib/Session/Token.pm
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
-MYMETA.json
-MYMETA.yml
 rand.h
 randport.c
 README

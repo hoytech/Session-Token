@@ -10,3 +10,4 @@ Token.o
 Token.c
 Token.bs
 randport.o
+MYMETA.*
