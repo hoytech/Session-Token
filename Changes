@@ -1,3 +1,12 @@
+1.006  2013-02-14
+  * Add section to docs describing the efficiency of the
+    re-rolling technique for eliminating mod bias
+  * Add comparison to Bytes::Random::Secure
+  * Improve non-ASCII alphabet example
+  * Don't include MYMETA files in CPAN distribution
+  * kernel-seeding test was missing from manifest
+  * Require perl 5.8 due to use of :raw
+
 0.900  2012-12-05
   * Version number format change
   * Include github repo and bugtracker in CPAN meta data

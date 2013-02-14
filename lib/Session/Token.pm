@@ -6,7 +6,7 @@ use Carp qw/croak/;
 use POSIX qw/ceil/;
 
 
-our $VERSION = '0.900';
+our $VERSION = '1.006';
 
 require XSLoader;
 XSLoader::load('Session::Token', $VERSION);
