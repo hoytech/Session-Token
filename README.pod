@@ -185,7 +185,7 @@ Aside: If you have a constant-biased output stream like the above example produc
 
 =head1 ALPHABET SIZE LIMITATION
 
-Due to a limitation in this module's code, alphabets can't be larger than 256 characters. Everywhere the above manual says "characters" it actually means bytes. This isn't a Unicode limitation per se, just the maximum size of the alphabet. If you like, you can map tokens onto new alphabets as long as they aren't more than 256 characters long. Because it is the origin of the word "alphabet", here is how to generate a 128-bit minimum entropy token using the lowercase greek alphabet (note that both forms of lowercase sigma are included which may not be desirable):
+Due to a limitation in this module's code, alphabets can't be larger than 256 characters. Everywhere the above manual says "characters" it actually means bytes. This isn't a Unicode limitation per se, just the maximum size of the alphabet. If you like, you can map tokens onto new alphabets as long as they aren't more than 256 characters long. Here is how to generate a 128-bit minimum entropy token using the lowercase greek alphabet (note that both forms of lowercase sigma are included which may not be desirable):
 
     use utf8;
     my $token = Session::Token->new(alphabet => [map {chr} 0..25])->get;
