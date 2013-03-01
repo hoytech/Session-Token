@@ -379,7 +379,7 @@ L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described
 
 There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
 
-L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. However, it has a massive dependency tree, doesn't give any control over when its singleton generator is (re-)seeded, and is much slower than this module (even when using L<Math::Random::ISAAC::XS>). It does however support alphabets larger than C<256> and might work in environments without XS.
+L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. However, it is much slower than this module (even when using L<Math::Random::ISAAC::XS>) and doesn't let you specify token-pool size by entropy. It does however support alphabets larger than C<256> and might work in environments without XS.
 
 Neil Bowers has conducted a L<3rd party review|http://neilb.org/reviews/passwords.html> of various token/password generation modules including Session::Token.
 
