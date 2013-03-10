@@ -1,11 +1,12 @@
 use Session::Token;
 
 ## The point of this test is to test the various alphabet, length, and
-## entropy interfaces are behaving according to the design.
+## entropy interfaces are behaving according to the design. It also
+## checks that passing args in as a hash-ref works.
 
 use strict;
 
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 my $ctx;
 
@@ -28,6 +29,10 @@ $ctx = Session::Token->new( alphabet => '01', entropy => 8, );
 is(length($ctx->get), 8);
 
 $ctx = Session::Token->new( alphabet => '01', entropy => 8.1, );
+is(length($ctx->get), 9);
+
+## verify hash-ref interface
+$ctx = Session::Token->new({ alphabet => '01', entropy => 8.1, });
 is(length($ctx->get), 9);
 
 ## alphabet has 1.585 bits of entropy, 10/1.585 = 6.309, round up to 7 chars

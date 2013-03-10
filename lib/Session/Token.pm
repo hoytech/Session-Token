@@ -24,7 +24,12 @@ if ($^O =~ /mswin/i) {
 
 
 sub new {
-  my ($class, %args) = @_;
+  my ($class, @args) = @_;
+
+  ## support arguments in a hash ref
+  @args = %{$args[0]} if @args == 1 && ref $args[0] eq 'HASH';
+
+  my %args = @args;
 
   my $self = {};
   bless $self, $class;
@@ -188,6 +193,10 @@ To set a custom alphabet, just pass in either a string or an array of characters
     Session::Token->new(alphabet => '01')->get;
     Session::Token->new(alphabet => ['0', '1'])->get; # same thing
     Session::Token->new(alphabet => ['a'..'z'])->get; # character range
+
+Constructor args can be a hash-ref too:
+
+    Session::Token->new({ alphabet => ['a'..'z'] })->get;
 
 
 
