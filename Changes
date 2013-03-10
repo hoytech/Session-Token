@@ -1,3 +1,9 @@
+1.007  2013-03-09
+  * Support passing constructor args in as a hash-ref as
+    well as a list
+  * Update description of Bytes::Random::Secure
+  * Doc updates
+
 1.006  2013-02-14
   * Add section to docs describing the efficiency of the
     re-rolling technique for eliminating mod bias
