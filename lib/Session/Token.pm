@@ -127,7 +127,6 @@ __END__
 
 Session::Token - Secure, efficient, simple random session token generation
 
-
 =head1 SYNOPSIS
 
 =head2 Simple 128-bit session token
