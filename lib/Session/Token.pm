@@ -185,7 +185,7 @@ For some purposes, base-62 is a sweet spot. It is more compact than hexadecimal 
 
 Also, base-62 tokens don't use "wacky" characters like base-64 encodings do. These characters sometimes cause encoding/escaping problems (ie when embedded in URLs) and are annoying because often you can't select tokens by double-clicking on them.
 
-Although the default is base-62, there are all kinds of reasons you might like to use another alphabet. One example is if your users are reading tokens from a print-out or SMS or whatever, you may choose to omit characters like C<o>, C<O>, and C<0> that can easily be confused.
+Although the default is base-62, there are all kinds of reasons for using another alphabet. One example is if your users are reading tokens from a print-out or SMS or whatever, you may choose to omit characters like C<o>, C<O>, and C<0> that can easily be confused.
 
 To set a custom alphabet, just pass in either a string or an array of characters to the C<alphabet> parameter of the constructor:
 
@@ -252,7 +252,7 @@ Of course in an unbiased distribution, each character would have the same chance
     P(b) = 1/3
     P(c) = 1/3
 
-Bias is undesirable because certain tokens are obvious starting points when token guessing and certain other tokens are very unlikely. Tokens that are unbiased are equally likely and therefore there is no starting point with them.
+Bias is undesirable because certain tokens are obvious starting points when token guessing and certain other tokens are very unlikely. Tokens that are unbiased are equally likely and therefore there is no obvious starting point with them.
 
 Session::Token provides unbiased tokens regardless of the size of your alphabet (though see the L<INTRODUCING BIAS> section for a mis-use warning). It does this in the same way that you might simulate producing unbiased random numbers from 1 to 5 given an unbiased 6-sided die: Re-roll every time a 6 comes up.
 
@@ -354,7 +354,7 @@ Another approach is to eliminate leading characters of a given value in the same
 
 Implementing unbiased, variable-length tokens would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable-length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't hard-coded anywhere in the Session::Token source code (but C<128> is).
 
-
+The final reason that Session::Token discourages variable length tokens is that they can leak token information through a side-channel. This could occur when a message is encrypted but the length of the original message can be inferred from the encrypted ciphertext.
 
 
 =head1 BUGS
