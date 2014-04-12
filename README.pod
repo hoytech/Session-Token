@@ -105,7 +105,9 @@ B<The default minimum entropy is 128 bits.> Default tokens are 22 characters lon
 
 An interesting observation is that in base-64 representation, 128-bit minimum tokens also require 22 characters and that these tokens contain only 1 more bit of entropy.
 
-Another Session::Token design criterion is that all tokens should be the same length. The default token length is 22 characters and the tokens are always exactly 22 characters (no more, no less). This is nice because it makes writing matching regular expressions easier, simplifies storage (you never have to store length), and causes various log files and things to line up neatly on your screen. Instead of tokens that are exactly C<N> characters, some libraries that use arbitrary precision arithmetic end up creating tokens of I<at most> C<N> characters.
+Another Session::Token design criterion is that all tokens should be the same length. The default token length is 22 characters and the tokens are always exactly 22 characters (no more, no less). Instead of tokens that are exactly C<N> characters, some libraries that use arbitrary precision arithmetic end up creating tokens of I<at most> C<N> characters.
+
+A fixed token length is nice because it makes writing matching regular expressions easier, simplifies storage (you never have to store length), causes various log files and things to line up neatly on your screen, and ensures that encrypted tokens won't leak token entropy due to length (see L<VARIABLE LENGTH TOKENS>).
 
 In summary, the default token length of exactly 22 characters is a consequence of these decisions: base-62 representation, 128 bit minimum token entropy, and consistent token length.
 
@@ -199,7 +201,7 @@ Here's an interesting way to generate a uniform random integer between 0 to 999 
 
     0 + Session::Token->new(alphabet => ['0'..'9'], length => 3)->get
 
-If you wanted to natively support high code points, there is no point in hard-coding a limitation on the size of Unicode or some arbitrary machine word. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of something similar in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
+If you wanted to natively support high code points, there is no point in hard-coding a limitation on the size of Unicode or even the (higher) limitation of perl characters. Instead, arbitrary precision "characters" should be supported with L<bigint>. Here's an example of something similar in lisp: L<isaac.lisp|http://hcsw.org/downloads/isaac.lisp>.
 
 This module is not however designed to be the ultimate random number generator and at this time I think changing the design as described above would interfere with its goal of being secure, efficient, and simple.
 
@@ -214,7 +216,7 @@ However if you know what you're doing you can pass in a custom seed as a 1024 by
 
     my $gen = Session::Token(seed => "\x00" x 1024);
 
-This is done in the test-suite to compare against Jenkins' reference ISAAC output, but obviously don't do this in regular applications because the generated tokens will always be the same.
+This is done in the test-suite to compare against Jenkins' reference ISAAC output, but obviously don't do this in regular applications because the generated tokens will be the same every time your program is run.
 
 One valid reason for seeding is if you have some reason to believe that there isn't enough entropy in your kernel's randomness pool and therefore you don't trust C</dev/urandom>. In this case you should acquire your own seed data from somewhere trustworthy (maybe C</dev/random> or a previously stored trusted seed).
 
@@ -227,7 +229,7 @@ As mentioned above, all tokens produced by a Session::Token generator are the sa
 
 If you randomly truncate tokens created by Session::Token, be careful not to introduce bias. For example, if you choose the length of the token as a uniformly distributed random length between 8 and 10, then the output will be biased towards shorter token sizes. Length 8 tokens should appear less frequently than length 9 or 10 tokens because there are fewer of them.
 
-Another approach is to eliminate leading characters of a given value in the same way as leading C<0>s are eliminated from numeric representations. Although this approach doesn't introduce bias, the tokens C<1> and C<01> are not distinct so it does not increase token entropy given a fixed maximum token length which is the main reason for preferring variable length tokens. The ideal variable length algorithm would generate both C<1> and C<01> tokens (with identical frequency of course).
+Another approach is to eliminate leading characters of a given value in the same way as leading C<0>s are commonly eliminated from numeric representations. Although this approach doesn't introduce bias, the tokens C<1> and C<01> are not distinct so it does not increase token entropy given a fixed maximum token length which is the main reason for preferring variable length tokens. The ideal variable length algorithm would generate both C<1> and C<01> tokens (with identical frequency of course).
 
 Implementing unbiased, variable-length tokens would complicate the Session::Token implementation especially since you should still be able to specify minimum entropy variable-length tokens. Minimum entropy is the primary input to Session::Token, not token length. This is the reason that the default token length of C<22> isn't hard-coded anywhere in the Session::Token source code (but C<128> is).
 
@@ -259,11 +261,11 @@ L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an 
 
 There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
 
-L<String::Random> is a cool module with a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and the lack of performance, bias, and security discussion in the docs made me decide to not use this otherwise very interesting module.
+L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security.
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use C<rand()>/mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
+There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, L<Data::SimplePassword>, L<Crypt::RandPasswd>, and L<String::MkPasswd> but they use insecure PRNGs such as C<rand()> or mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
 
 L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. It is much slower than Session::Token (even when using L<Math::Random::ISAAC::XS>) but does support alphabets larger than C<256> and might work in environments without XS.
 
