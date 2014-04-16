@@ -110,7 +110,11 @@ sub get {
 sub DESTROY {
   my ($self) = @_;
 
+  return if !exists $self->{ctx};
+
   _destroy_isaac_context($self->{ctx});
+
+  delete $self->{ctx};
 }
 
 
