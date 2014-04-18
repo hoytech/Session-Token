@@ -1,3 +1,10 @@
+1.008  2014-04-18
+  * Delete reference to seed pointer after de-allocation
+    * This is defensive programming in case of obscure
+      bugs in apps that invoke DESTROY multiple times
+  * Lots of documentation improvements
+  * Make podchecker happy
+
 1.007  2013-03-09
   * Support passing constructor args in as a hash-ref as
     well as a list
