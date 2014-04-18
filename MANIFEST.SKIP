@@ -11,3 +11,4 @@ Token.c
 Token.bs
 randport.o
 MYMETA.*
+Session-Token.*tar[.]gz$
