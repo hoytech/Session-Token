@@ -38,20 +38,21 @@ This module provides a secure, efficient, and simple interface for creating sess
 
 When a Session::Token object is created, 1024 bytes are read from C</dev/urandom> (Linux, Solaris, most BSDs), C</dev/arandom> (some older BSDs), or L<Crypt::Random::Source::Strong::Win32> (Windows). These bytes are used to seed the L<ISAAC-32|http://www.burtleburtle.net/bob/rand/isaacafa.html> pseudo random number generator.
 
-Once a generator is created, you can repeatedly call the C<get> method on the generator object and it will return new tokens.
+Once a generator is created, you can repeatedly call the C<get> method on the generator object and it will return a new token each time.
 
 B<IMPORTANT>: If your application calls C<fork>, make sure that any generators are re-created in one of the processes after the fork since forking will duplicate the generator state and both parent and child processes will go on to produce identical tokens (just like perl's L<rand> after it is seeded).
 
 After the generator context is created, no system calls are used to generate tokens. This is one way that Session::Token helps with efficiency. However, this is only important for certain use cases (generally not web sessions).
 
-ISAAC is a cryptographically secure PRNG that improves on the well known RC4 algorithm in some important areas. For instance, it doesn't have short cycles or initial bias like RC4 does. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and probably don't exist at all). On average, ISAAC cycles are C<2**8295>.
+ISAAC is a cryptographically secure PRNG that improves on the well-known RC4 algorithm in some important areas. For instance, it doesn't have short cycles or initial bias like RC4 does. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and probably don't exist at all). On average, ISAAC cycles are C<2**8295>.
 
-Creators of server applications must choose whether a single generator will be kept around and used to generate all tokens, or if a new Session::Token object will be created every time a token is needed. Using a generator may be undesirable because servers start up early after a reboot and the kernel's randomness pool might be poorly seeded at this point. For this reason, you might want to defer creating the generator until the first request comes in and/or periodically re-create the generator object. 
+Creators of server applications must choose whether a single generator will be kept around and used to generate all tokens, or if a new Session::Token object will be created every time a token is needed.
 
-There are good arguments for keeping the generator around, however. Probably the most important is that generating a new token cannot fail due to a full file descriptor table. Creating a new Session::Token object for every token can fail for this reason because the constructor opens C</dev/urandom>. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot>ed environments where C</dev/urandom> can no longer be opened.
+Generally speaking the generator should be kept around and re-used. Probably the most important reason for this is that generating a new token from an existing generator cannot fail due to a full file descriptor table. Creating a new Session::Token object for every token can fail because the constructor opens C</dev/urandom> which will not succeed if all allotted descriptors are in use. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot>ed environments where C</dev/urandom> can no longer be opened.
+
+However, re-using a generator may be undesirable because servers are typically started immediately after a system reboot and the kernel's randomness pool might be poorly seeded at that point meaning that all subsequently generated tokens may be based on a weak/predictable seed. For this reason, you might choose to defer creating the generator until the first request actually comes in and/or periodically re-create the generator object. 
 
 Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory (unix really ought to provide a system call for random data). Session::Token throws an exception if it can't seed itself.
-
 
 
 =head1 CUSTOM ALPHABETS
@@ -109,7 +110,7 @@ Another Session::Token design criterion is that all tokens should be the same le
 
 A fixed token length is nice because it makes writing matching regular expressions easier, simplifies storage (you never have to store length), causes various log files and things to line up neatly on your screen, and ensures that encrypted tokens won't leak token entropy due to length (see L<VARIABLE LENGTH TOKENS>).
 
-In summary, the default token length of exactly 22 characters is a consequence of these decisions: base-62 representation, 128 bit minimum token entropy, and consistent token length.
+In summary, the default token length of exactly 22 characters is a consequence of these decisions: base-62 representation, 128 bit minimum token entropy, and fixed token length.
 
 
 
@@ -165,7 +166,7 @@ In order to find the average number of bytes consumed for each character, calcul
 
 So for the default base-62 alphabet, the average number of bytes consumed for each character in a token is:
 
-    E = 1/(62/64) = 64/62 ~ 1.0323
+    E = 1/(62/64) = 64/62 ≅ 1.0323
 
 Because of the next power of two masking optimisation described above, C<E> will always be less than C<2>. In the worst case scenario of an alphabet with 129 characters, C<E> is roughly C<1.9845>.
 
@@ -177,7 +178,7 @@ This minor inefficiency isn't an issue because the ISAAC implementation used is 
 
 If your alphabet contains the same character two or more times, this character will be more biased than a character that only occurs once. You should be careful that your alphabets don't overlap if you are trying to create random session tokens.
 
-However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should issue a warning?)
+However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should print a warning?)
 
     Session::Token->new(alphabet => '0000001', length => 5000)->get; # don't do this
     ## -> 0000000000010000000110000000000000000000000100...
@@ -218,7 +219,7 @@ However if you know what you're doing you can pass in a custom seed as a 1024 by
 
 This is done in the test-suite to compare against Jenkins' reference ISAAC output, but obviously don't do this in regular applications because the generated tokens will be the same every time your program is run.
 
-One valid reason for seeding is if you have some reason to believe that there isn't enough entropy in your kernel's randomness pool and therefore you don't trust C</dev/urandom>. In this case you should acquire your own seed data from somewhere trustworthy (maybe C</dev/random> or a previously stored trusted seed).
+One valid reason for manually seeding is if you have some reason to believe that there isn't enough entropy in your kernel's randomness pool and therefore you don't trust C</dev/urandom>. In this case you should acquire your own seed data from somewhere trustworthy (maybe C</dev/random> or a previously stored trusted seed).
 
 
 
@@ -240,9 +241,9 @@ The final reason that Session::Token discourages variable length tokens is that 
 
 Should check for biased alphabets and print warnings.
 
-Would be cool if it could detect forks and warn or re-seed in the child process.
+Would be cool if it could detect forks and warn or re-seed in the child process (without incurring C<getpid> overhead).
 
-There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated keystream bug.
+There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated output-stream bug.
 
 Doesn't work on perl 5.6 and below due to the use of C<:raw> (thanks CPAN testers). It could probably use C<binmode> instead, but meh.
 
@@ -257,9 +258,9 @@ There are lots of different modules for generating random data. If the character
 
 Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl's C<rand()> is not secure. Perl doesn't specify a PRNG algorithm at all. On linux, whatever it is is seeded with a mere 4 bytes from C</dev/urandom>.
 
-L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA-1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address and the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
+L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an inflexible and unspecified alphabet. It tries to get its source of unpredictability from UUIDs and then hashes these UUIDs with SHA-1. I think this is bad design because some standard UUID formats aren't designed to be unpredictable at all. Knowing a target's MAC address or the rough time the token was issued may help you predict a reduced area of token-space to concentrate guessing attacks upon. I don't know if Data::Token uses these types of UUIDs or the potentially secure "version 4" UUIDs, but because this wasn't addressed in the documentation and because of an apparent misapplication of hash functions (if you really had a good random UUID type, there would be no need to hash), I don't feel good about using this module.
 
-There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
+There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open or read from C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
 
 L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security.
 
@@ -279,7 +280,7 @@ Doug Hoyte, C<< <doug@hcsw.org> >>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012-2013 Doug Hoyte.
+Copyright 2012-2014 Doug Hoyte.
 
 This module is licensed under the same terms as perl itself.
 
