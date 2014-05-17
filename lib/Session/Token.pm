@@ -303,7 +303,7 @@ This minor inefficiency isn't an issue because the ISAAC implementation used is 
 
 =head1 INTRODUCING BIAS
 
-If your alphabet contains the same character two or more times, this character will be more biased than a character that only occurs once. You should be careful that your alphabets don't overlap if you are trying to create random session tokens.
+If your alphabet contains the same character two or more times, this character will be more biased than a character that only occurs once. You should be careful that your alphabets don't repeat in this way if you are trying to create random session tokens.
 
 However, if you wish to introduce bias this library doesn't try to stop you. (Maybe it should print a warning?)
 
