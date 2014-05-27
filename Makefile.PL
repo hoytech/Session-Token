@@ -18,7 +18,7 @@ my %args = (
     OBJECT            => 'Token.o randport.o',
     LICENSE           => 'perl',
     dist => {
-      PREOP => 'perldoc -uT $(VERSION_FROM) > README.pod; pod2text README.pod > $(DISTVNAME)/README',
+      PREOP => 'pod2text $(VERSION_FROM) > $(DISTVNAME)/README',
     },
     MIN_PERL_VERSION  => '5.8.0',
 );
