@@ -179,7 +179,7 @@ Generally speaking the generator should be kept around and re-used. Probably the
 
 However, re-using a generator may be undesirable because servers are typically started immediately after a system reboot and the kernel's randomness pool might be poorly seeded at that point meaning that all subsequently generated tokens may be based on a weak/predictable seed. For this reason, you might choose to defer creating the generator until the first request actually comes in and/or periodically re-create the generator object. 
 
-Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory (unix really ought to provide a system call for random data). Session::Token throws an exception if it can't seed itself.
+Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory (unix really ought to provide a system call for random data). The Session::Token constructor throws an exception if it can't seed itself.
 
 
 =head1 CUSTOM ALPHABETS
@@ -398,6 +398,8 @@ There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPassw
 L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. It is much slower than Session::Token (even when using L<Math::Random::ISAAC::XS>) but does support alphabets larger than C<256> and might work in environments without XS.
 
 Neil Bowers has conducted a L<3rd party review|http://neilb.org/reviews/passwords.html> of various token/password generation modules including Session::Token.
+
+Leo Zovic has created a L<Common Lisp implementation of session-token|https://github.com/Inaimathi/session-token>.
 
 
 
