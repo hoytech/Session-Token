@@ -377,9 +377,28 @@ Doesn't work on perl 5.6 and below due to the use of C<:raw> (thanks CPAN tester
 On windows we use L<Crypt::Random::Source::Strong::Win32> which has a big dependency tree. We should instead use a slimmer module like L<Crypt::Random::Seed>.
 
 
+=head1 COMMAND-LINE APP
+
+There is a command-line application called L<App::Session::Token> which is a convenience wrapper around L<Session::Token>. You can generate session tokens by running the C<session-token> binary:
+
+    $ echo "Your password is `session-token`"
+    Your password is 8Yom6z4AeB1RXxCGzklJFt
+
+It supports all the options of this module via command line parameters, and multiple session tokens can be generated with the C<--num> (aka C<-n>) switch. For example:
+
+    $ session-token --alphabet ABC --entropy 32 --num 5
+    BACAACABCCCCAACBBBCAB
+    BCBACACBBCACCBABABCBA
+    ABBBCBABBACBBBCBBBCCA
+    AACCBBBCCAAACBABACABC
+    CCABCABBCCCAACAAACCAA
+
+
 =head1 SEE ALSO
 
 L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
+
+L<App::Session::Token>
 
 There are lots of different modules for generating random data. If the characterisations of any of them below are inaccurate or out-of-date, please file a github issue and I will correct them.
 
@@ -393,7 +412,7 @@ L<String::Random> has a neat regexp-like language for specifying random tokens w
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
-There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, L<Data::SimplePassword>, L<Crypt::RandPasswd>, and L<String::MkPasswd> but they use insecure PRNGs such as C<rand()> or mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
+There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use insecure PRNGs such as C<rand()> or mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
 
 L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. It is much slower than Session::Token (even when using L<Math::Random::ISAAC::XS>) but does support alphabets larger than C<256> and might work in environments without XS.
 
