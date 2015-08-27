@@ -1,3 +1,6 @@
+1.010  2015-08-27
+  * Fix POD link
+
 1.009  2015-08-27
   * Link to Leo Zovic's lisp implementation of Session::Token
   * Fix doc typo noticed by Per Carlson
