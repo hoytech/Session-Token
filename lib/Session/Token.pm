@@ -454,7 +454,7 @@ L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an 
 
 There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open or read from C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
 
-L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security. See the L<#TOKEN-TEMPLATES> section for a similar feature.
+L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security. See the L</"TOKEN TEMPLATES"> section for a similar feature.
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
