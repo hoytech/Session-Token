@@ -335,6 +335,52 @@ This module is not however designed to be the ultimate random number generator a
 
 
 
+=head1 TOKEN TEMPLATES
+
+L<String::Random> has a method called C<randpattern> where you provide a pattern that serves as a template when creating the token. You define the meaning of 1 or more template characters and each one that occurs in the pattern is replaced by a random character from a corresponding alphabet.
+
+Andrew Beverley requested this feature for L<Session::Token> and I suggested approximately the following:
+
+    use Session::Token;
+
+    sub token_template {
+      my (%m) = @_;
+
+      %m = map { $_ => Session::Token->new(alphabet => $m{$_}, length => 1) } keys %m;
+
+      return sub {
+        my $v = shift;
+        $v =~ s/(.)/exists $m{$1} ? $m{$1}->get : $1/eg;
+        return $v;
+      };
+    }
+
+In order to use C<token_template> you should pass it key-vaue pairs of the different token characters and the alphabets they represent. It will return a sub that should be passed the template pattern and it will return the resulting random tokens.
+
+For example, here is how to create L<UUID version 4|https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_.28random.29> tokens:
+
+    sub uuid_v4_generator {
+      my $t = token_template(
+            x => [ 0..9, 'a'..'f' ],
+            y => [ 8, 9, 'a', 'b' ],
+          );
+
+      return sub {
+        return $t->('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx');
+      }
+    }
+
+C<uuid_v4_generator> returns a generator function that will return tokens of the following form:
+
+    1b782499-9913-4726-a80a-25e7b2221a7c
+    90f85a64-d826-43bf-98e7-94ba87406bfb
+    b8b73175-3cce-4861-b43b-3dec5ed5d641
+    3afb64ab-6de3-4647-bbff-eb94dfa7d4b0
+    447d2001-2aec-4d32-9910-8c289ae34c48
+
+Note that characters in the pattern which don't have template characters defined (C<-> and C<4> in the above example) are passed through to the output token.
+
+
 
 =head1 SEEDING
 
@@ -408,7 +454,7 @@ L<Data::Token> is the first thing I saw when I looked around on CPAN. It has an 
 
 There are several decent random number generators like L<Math::Random::Secure> and L<Crypt::URandom> but they usually don't implement alphabets and some of them require you open or read from C</dev/urandom> for every chunk of random bytes. Note that Math::Random::Secure does prevent mod bias in its random integers and could be used to implement unbiased alphabets (slowly).
 
-L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security.
+L<String::Random> has a neat regexp-like language for specifying random tokens which is more flexible than alphabets. However, it uses perl's C<rand()> and its documentation fails to discuss performance, bias, or security. See the L<#TOKEN-TEMPLATES> section for a similar feature.
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
