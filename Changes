@@ -1,7 +1,7 @@
 1.500  2015-09-09
   * Use typemap to bless the C context to Session::Token
     package and implement get() fully in XS. This is about
-    40% faster when methods are created in a tight loop.
+    40% faster when tokens are created in a tight loop.
 
 1.010  2015-08-27
   * Fix POD link
