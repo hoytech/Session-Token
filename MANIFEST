@@ -15,3 +15,4 @@ t/no-mod-bias.t
 t/reference.t
 t/seed-coverage.t
 Token.xs
+typemap

@@ -11,13 +11,19 @@
 
 
 struct session_token_ctx {
+  int mask;
   int count;
   int curr_word;
   int bytes_left_in_curr_word;
   struct randctx isaac_ctx;
+  char *alphabet;
+  size_t alphabet_length;
+  size_t token_length;
 };
 
-static int get_new_byte(struct session_token_ctx *ctx) {
+typedef struct session_token_ctx * Session_Token;
+
+static inline int get_new_byte(struct session_token_ctx *ctx) {
   int output;
 
   if (ctx->bytes_left_in_curr_word == 0) {
@@ -52,9 +58,11 @@ MODULE = Session::Token		PACKAGE = Session::Token
 PROTOTYPES: ENABLE
 
 
-unsigned long
-_get_isaac_context(seed)
+Session_Token
+_new_context(seed, alphabet, token_length)
         SV *seed
+        SV *alphabet
+        size_t token_length
     CODE:
         struct session_token_ctx *ctx;
         char *seedp;
@@ -65,8 +73,8 @@ _get_isaac_context(seed)
 
         assert(sizeof(ctx->isaac_ctx.randrsl) == 1024);
 
-        if (SvCUR(seed) != 1024) {
-          XSRETURN_UNDEF;
+        if (len != 1024) {
+          croak("unexpected seed length: %lu", len);
         }
 
         ctx = malloc(sizeof(struct session_token_ctx));
@@ -76,43 +84,48 @@ _get_isaac_context(seed)
         randinit(&ctx->isaac_ctx, TRUE);
         isaac(&ctx->isaac_ctx);
 
-        RETVAL = (unsigned long) ctx;
+        ctx->alphabet_length = SvCUR(alphabet);
+        ctx->alphabet = malloc(ctx->alphabet_length);
+        memcpy(ctx->alphabet, SvPV(alphabet, ctx->alphabet_length), ctx->alphabet_length);
+
+        ctx->token_length = token_length;
+
+        ctx->mask = get_mask(ctx->alphabet_length);
+
+        RETVAL = ctx;
 
     OUTPUT:
         RETVAL
 
 
 void
-_destroy_isaac_context(ctx)
-        unsigned long ctx
+DESTROY(ctx)
+        Session_Token ctx
     CODE:
-        free((void*) ctx);
+        free(ctx->alphabet);
+        free(ctx);
 
 
-void
-_get_token(ctx_raw, alphabet, output)
-        unsigned long ctx_raw
-        SV *alphabet
-        SV *output
+SV *
+get(ctx)
+        Session_Token ctx
     CODE:
-        struct session_token_ctx *ctx;
-        char *alphabetp;
-        size_t alphabetlen;
+        SV *output;
         char *outputp;
-        size_t outputlen;
-        int i, curr, mask;
+        size_t i, curr;
 
-        ctx = (struct session_token_ctx *) ctx_raw;
+        output = newSVpvn("", 0);
+        SvGROW(output, ctx->token_length);
+        SvCUR_set(output, ctx->token_length);
+        outputp = SvPV(output, ctx->token_length);
 
-        alphabetlen = SvCUR(alphabet);
-        alphabetp = SvPV(alphabet, alphabetlen);
-
-        outputlen = SvCUR(output);
-        outputp = SvPV(output, outputlen);
-
-        mask = get_mask(alphabetlen);
-
-        for (i=0; i<outputlen; i++) {
-          while((curr = (get_new_byte(ctx) & mask)) >= alphabetlen)  ;
-          outputp[i] = alphabetp[curr];
+        for (i=0; i<ctx->token_length; i++) {
+          while((curr = (get_new_byte(ctx) & ctx->mask)) >= ctx->alphabet_length)  ;
+          outputp[i] = ctx->alphabet[curr];
         }
+
+        RETVAL = output;
+
+    OUTPUT:
+        RETVAL
+

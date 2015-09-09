@@ -31,8 +31,6 @@ sub new {
 
   my %args = @args;
 
-  my $self = {};
-  bless $self, $class;
 
   ## Init seed
 
@@ -67,11 +65,11 @@ sub new {
 
   ## Init alphabet
 
-  $self->{alphabet} = defined $args{alphabet} ? $args{alphabet} : $default_alphabet;
-  $self->{alphabet} = join('', @{$self->{alphabet}}) if ref $self->{alphabet} eq 'ARRAY';
+  my $alphabet = defined $args{alphabet} ? $args{alphabet} : $default_alphabet;
+  $alphabet = join('', @$alphabet) if ref $alphabet eq 'ARRAY';
 
   croak "alphabet must be between 2 and 256 bytes long"
-    if length($self->{alphabet}) < 2 || length($self->{alphabet}) > 256;
+    if length($alphabet) < 2 || length($alphabet) > 256;
 
 
   ## Init token length
@@ -79,43 +77,22 @@ sub new {
   croak "you can't specify both length and entropy"
     if defined $args{length} && defined $args{entropy};
 
+  my $token_length;
+
   if (defined $args{length}) {
     croak "bad value for length" unless $args{length} =~ m/^\d+$/ && $args{length} > 0;
-    $self->{length} = $args{length};
+    $token_length = $args{length};
   } else {
     my $entropy = $args{entropy} || $default_entropy;
     croak "bad value for entropy" unless $entropy > 0;
-    my $alphabet_entropy = log(length($self->{alphabet})) / log(2);
-    $self->{length} = ceil($entropy / $alphabet_entropy);
+    my $alphabet_entropy = log(length($alphabet)) / log(2);
+    $token_length = ceil($entropy / $alphabet_entropy);
   }
 
-  ## Create the ISAAC context
-  $self->{ctx} = _get_isaac_context($seed) || die "Bad seed (incorrect length?)";
 
-  return $self;
+  return _new_context($seed, $alphabet, $token_length);
 }
 
-
-sub get {
-  my ($self) = @_;
-
-  my $output = "\x00" x $self->{length};
-
-  _get_token($self->{ctx}, $self->{alphabet}, $output);
-
-  return $output;
-}
-
-
-sub DESTROY {
-  my ($self) = @_;
-
-  return if !exists $self->{ctx};
-
-  _destroy_isaac_context($self->{ctx});
-
-  delete $self->{ctx};
-}
 
 
 1;
