@@ -1,5 +1,6 @@
 Changes
 COPYING
+ex/token-template-bench.pl
 lib/Session/Token.pm
 Makefile.PL
 MANIFEST
