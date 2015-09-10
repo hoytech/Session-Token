@@ -1,3 +1,7 @@
+1.501  2015-09-09
+  * Add benchmarking example that compares token templates
+    versus String::Random's randpattern
+
 1.500  2015-09-09
   * Use typemap to bless the C context to Session::Token
     package and implement get() fully in XS. This is about
