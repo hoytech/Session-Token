@@ -17,7 +17,7 @@ is(length($ctx->get), 22);
 ## can specify length directly
 $ctx = Session::Token->new( alphabet => '01', length => 30, );
 is(length($ctx->get), 30);
-ok($ctx->get =~ /^[01]+$/);
+like($ctx->get, qr/^[01]+$/);
 
 $ctx = Session::Token->new( alphabet => '01', length => 100000, );
 is(length($ctx->get), 100000);
