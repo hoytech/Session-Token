@@ -150,13 +150,18 @@ After the generator context is created, no system calls are used to generate tok
 
 ISAAC is a cryptographically secure PRNG that improves on the well-known RC4 algorithm in some important areas. For instance, it doesn't have short cycles or initial bias like RC4 does. A theoretical shortest possible cycle in ISAAC is C<2**40>, although no cycles this short have ever been found (and probably don't exist at all). On average, ISAAC cycles are C<2**8295>.
 
-Creators of server applications must choose whether a single generator will be kept around and used to generate all tokens, or if a new Session::Token object will be created every time a token is needed.
 
-Generally speaking the generator should be kept around and re-used. Probably the most important reason for this is that generating a new token from an existing generator cannot fail due to a full file descriptor table. Creating a new Session::Token object for every token can fail because the constructor opens C</dev/urandom> which will not succeed if all allotted descriptors are in use. Programs that re-use the generator are also more efficient and are less likely to cause problems in C<chroot>ed environments where C</dev/urandom> can no longer be opened.
+=head1 GENERATORS AND URANDOM
 
-However, re-using a generator may be undesirable because servers are typically started immediately after a system reboot and the kernel's randomness pool might be poorly seeded at that point meaning that all subsequently generated tokens may be based on a weak/predictable seed. For this reason, you might choose to defer creating the generator until the first request actually comes in and/or periodically re-create the generator object. 
+Developers must choose whether a single token generator will be kept around and used to generate all tokens, or if a new Session::Token object will be created every time a token is needed. As mentioned above, this module accesses urandom in its constructor for seeding purposes, but not subsequently while generating tokens.
 
-Aside: Some crappy (usually C) programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory (unix really ought to provide a system call for random data). The Session::Token constructor throws an exception if it can't seed itself.
+Generally speaking the generator should be kept around and re-used. Probably the most important reason for this is that generating a new token from an existing generator cannot fail due to a full file-descriptor table. Creating a new Session::Token object for every token can fail because, as described above, the constructor needs to open C</dev/urandom> and this will not succeed if all allotted descriptors are in use, or if the read is interrupted by a signal. In these events a perl exception will be thrown.
+
+Programs that re-use a generator are more likely to be portable to C<chroot>ed environments where C</dev/urandom> may not be present. Finally, accessing urandom frequently is inefficient because it requires making system calls and because (at least on linux) reading from urandom acquires a system-wide kernel lock.
+
+On the other hand, re-using a generator may be undesirable because servers are typically started immediately after a system reboot and the kernel's randomness pool might be poorly seeded at that point. Similarly, when starting a virtual machine a previously used entropy pool state may be restored. In these cases all subsequently generated tokens will be derived from a weak/predictable seed. For this reason, you might choose to defer creating the generator until the first request actually comes in, periodically re-create the generator object, and/or manually handle seeding in some other way.
+
+Programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory. This is not the case with Session::Token since its constructor will always throw an exception if it can't seed itself. Some modern systems provide system calls with fewer failure modes (ie `getentropy(2)` on OpenBSD and `getrandom(2)` on linux). Future versions of Session::Token will likely use these system calls when available.
 
 
 =head1 CUSTOM ALPHABETS
