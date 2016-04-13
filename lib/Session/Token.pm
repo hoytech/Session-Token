@@ -474,6 +474,8 @@ TODO
 * Write a full file descriptor table test
 
 * Make the urandom/arandom checking code more readable/maintainable
+  * Kill off arandom?
+  * Use getentropy(2)/getrandom(2) if available
 
 * Seed extractor API
 
