@@ -428,6 +428,8 @@ L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
 L<App::Session::Token>
 
+L<Presentation for Toronto Perl Mongers|https://www.youtube.com/watch?v=c2KZBTtrmZE?start=3705>
+
 There are lots of different modules for generating random data. If the characterisations of any of them below are inaccurate or out-of-date, please file a github issue and I will correct them.
 
 Like this module, perl's C<rand()> function implements a user-space PRNG seeded from C</dev/urandom>. However, perl's C<rand()> is not secure. Perl doesn't specify a PRNG algorithm at all. On linux, whatever it is is seeded with a mere 4 bytes from C</dev/urandom>.
