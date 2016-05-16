@@ -482,3 +482,6 @@ TODO
 * Seed extractor API
 
 * Issue warning when an alphabet contains a duplicated character
+
+* Consider switching from ISAAC to ChaCha20 since this is a more
+  commonly relied on stream cipher nowadays
