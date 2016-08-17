@@ -1,3 +1,7 @@
+1.503  2016-08-17
+  * Link to my TPM presentation
+  * Documentation updates
+
 1.502  2015-09-19
   * The alphabet test was using a regexp with ok() which I
     think may be causing cpantesters failures. I changed
