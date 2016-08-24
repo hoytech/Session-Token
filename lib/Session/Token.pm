@@ -442,6 +442,8 @@ L<String::Random> has a neat regexp-like language for specifying random tokens w
 
 L<String::Urandom> has alphabets, but it uses the flawed mod algorithm described above and opens C</dev/urandom> for every token.
 
+L<Data::Entropy> uses a secure PRNG but is seeded with C<rand()>.
+
 There are other modules like L<Data::Random>, L<App::Genpass>, L<String::MkPasswd>, L<Crypt::RandPasswd>, L<Crypt::GeneratePassword>, and L<Data::SimplePassword> but they use insecure PRNGs such as C<rand()> or mersenne twister, don't adequately deal with bias, and/or don't let you specify generic alphabets.
 
 L<Bytes::Random::Secure> has alphabets (aka "bags"), uses ISAAC, and avoids mod bias using the re-roll algorithm. It is much slower than Session::Token (even when using L<Math::Random::ISAAC::XS>) but does support alphabets larger than C<256> and might work in environments without XS.
