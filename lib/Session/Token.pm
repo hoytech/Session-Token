@@ -428,7 +428,7 @@ L<The Session::Token github repo|https://github.com/hoytech/Session-Token>
 
 L<App::Session::Token>
 
-L<Presentation for Toronto Perl Mongers|https://www.youtube.com/watch?v=c2KZBTtrmZE?start=3705>
+L<Presentation for Toronto Perl Mongers|https://www.youtube.com/watch?v=c2KZBTtrmZE&t=1h1m45s>
 
 There are lots of different modules for generating random data. If the characterisations of any of them below are inaccurate or out-of-date, please file a github issue and I will correct them.
 
