@@ -392,17 +392,6 @@ Implementing unbiased, variable-length tokens would complicate the Session::Toke
 The final reason that Session::Token discourages variable length tokens is that they can leak token information through a side-channel. This could occur when a message is encrypted but the length of the original message can be inferred from the encrypted ciphertext.
 
 
-=head1 BUGS
-
-Should check for biased alphabets and print warnings.
-
-Would be cool if it could detect forks and warn or re-seed in the child process (without incurring C<getpid> overhead).
-
-There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated output-stream bug.
-
-Doesn't work on perl 5.6 and below due to the use of C<:raw> (thanks CPAN testers). It could probably use C<binmode> instead, but meh.
-
-On windows we use L<Crypt::Random::Source::Strong::Win32> which has a big dependency tree. We should instead use a slimmer module like L<Crypt::Random::Seed>.
 
 
 =head1 COMMAND-LINE APP
@@ -420,6 +409,22 @@ It supports all the options of this module via command line parameters, and mult
     ABBBCBABBACBBBCBBBCCA
     AACCBBBCCAAACBABACABC
     CCABCABBCCCAACAAACCAA
+
+
+
+=head1 BUGS
+
+Should check for biased alphabets and print warnings.
+
+Would be cool if it could detect forks and warn or re-seed in the child process (without incurring C<getpid> overhead).
+
+There is currently no way to extract the seed from a Session::Token object. Note when implementing this: The saved seed must either store the current state of the ISAAC round as well as the 1024 byte C<randsl> array or else do some kind of minimum fast forwarding in order to protect against a partially duplicated output-stream bug.
+
+Doesn't work on perl 5.6 and below due to the use of C<:raw> (thanks CPAN testers). It could probably use C<binmode> instead, but meh.
+
+On windows we use L<Crypt::Random::Source::Strong::Win32> which has a big dependency tree. We should instead use a slimmer module like L<Crypt::Random::Seed>.
+
+
 
 
 =head1 SEE ALSO
