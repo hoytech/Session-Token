@@ -492,3 +492,5 @@ TODO
 
 * Consider switching from ISAAC to ChaCha20 since this is a more
   commonly relied on stream cipher nowadays
+
+* explicit_bzero(ctx) before free()ing it... should find portable solution
