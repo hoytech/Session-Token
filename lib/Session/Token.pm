@@ -161,7 +161,7 @@ Programs that re-use a generator are more likely to be portable to C<chroot>ed e
 
 On the other hand, re-using a generator may be undesirable because servers are typically started immediately after a system reboot and the kernel's randomness pool might be poorly seeded at that point. Similarly, when starting a virtual machine a previously used entropy pool state may be restored. In these cases all subsequently generated tokens will be derived from a weak/predictable seed. For this reason, you might choose to defer creating the generator until the first request actually comes in, periodically re-create the generator object, and/or manually handle seeding in some other way.
 
-Programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory. This is not the case with Session::Token since its constructor will always throw an exception if it can't seed itself. Some modern systems provide system calls with fewer failure modes (ie `getentropy(2)` on OpenBSD and `getrandom(2)` on linux). Future versions of Session::Token will likely use these system calls when available.
+Programs that assume opening C</dev/urandom> will always succeed can return session tokens based only on the contents of nulled or uninitialised memory. This is not the case with Session::Token since its constructor will always throw an exception if it can't seed itself. Some modern systems provide system calls with fewer failure modes (ie C<getentropy(2)> on OpenBSD and C<getrandom(2)> on linux). Future versions of Session::Token will likely use these system calls when available.
 
 
 =head1 CUSTOM ALPHABETS
