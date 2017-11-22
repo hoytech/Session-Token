@@ -494,3 +494,6 @@ TODO
   commonly relied on stream cipher nowadays
 
 * explicit_bzero(ctx) before free()ing it... should find portable solution
+
+* Consider using MADV_WIPEONFORK if available
+  http://www.metzdowd.com/pipermail/cryptography/2017-November/033133.html
