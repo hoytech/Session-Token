@@ -115,14 +115,15 @@ get(ctx)
         size_t i, curr;
 
         output = newSVpvn("", 0);
-        SvGROW(output, ctx->token_length);
+        SvGROW(output, ctx->token_length + 1);
         SvCUR_set(output, ctx->token_length);
-        outputp = SvPV(output, ctx->token_length);
+        outputp = SvPV_nolen(output);
 
         for (i=0; i<ctx->token_length; i++) {
           while((curr = (get_new_byte(ctx) & ctx->mask)) >= ctx->alphabet_length)  ;
           outputp[i] = ctx->alphabet[curr];
         }
+        outputp[i] = '\0';
 
         RETVAL = output;
 
